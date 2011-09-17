@@ -20,27 +20,48 @@ class Game(models.Model):
         return self.name
 
 
-class Turn(models.Model):
-    class Meta:
-        get_latest_by = 'generated'
-        ordering = ['-generated']
+class Race(models.Model):
+    game = models.ForeignKey(Game)
+    name = models.CharField(max_length=15)
+    plural_name = models.CharField(max_length=15)
+    player_number = models.PositiveSmallIntegerField()
 
+    def __unicode__(self):
+        return self.name
+
+
+class Ambassador(models.Model):
+    race = models.ForeignKey(Race)
+    user = models.ForeignKey("auth.User")
+    name = models.CharField(max_length=128)
+    active = models.BooleanField(default=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+class Turn(models.Model):
     game = models.ForeignKey(Game)
     year = models.IntegerField()
     generated = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        get_latest_by = 'generated'
+        ordering = ('-generated',)
 
     def __unicode__(self):
         return unicode(self.year)
 
 
-class Ambassador(models.Model):
-    game = models.ForeignKey(Game)
-    user = models.ForeignKey("auth.User")
-    player_number = models.PositiveSmallIntegerField()
-    name = models.CharField(max_length=128)
-    race_name = models.CharField(max_length=15)
-    plural_race_name = models.CharField(max_length=15)
-    active = models.BooleanField(default=True)
+class Score(models.Model):
+    turn = models.ForeignKey(Turn)
+    race = models.ForeignKey(Race)
+    section = models.IntegerField()
+    value = models.IntegerField()
+
+    class Meta:
+        ordering = ('-turn', 'race')
+        unique_together = ('turn', 'race', 'section')
 
     def __unicode__(self):
-        return self.name
+        return u"{0}: {1}".format(self.section, self.value)
