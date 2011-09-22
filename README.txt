@@ -11,3 +11,7 @@ Requirements
 Python >= 2.6
 Django >= 1.2
 starslib (not yet released)
+
+Recommended
+-----------
+django-micro-press
