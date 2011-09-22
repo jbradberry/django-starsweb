@@ -32,7 +32,7 @@ class Game(models.Model):
 
     @property
     def race_list(self):
-        # annotate and order by the current score
+        # FIXME: annotate and order by the current score
         return self.race_set.order_by('player_number')
 
 
