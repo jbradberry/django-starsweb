@@ -23,15 +23,42 @@ class Game(models.Model):
     def __unicode__(self):
         return self.name
 
+    @models.permalink
+    def get_absolute_url(self):
+        return ('starsweb.views.game_detail', (), {'slug': self.slug})
+
+    def current_turn(self):
+        if self.turn_set.exists():
+            return self.turn_set.latest()
+
+    @property
+    def race_list(self):
+        # annotate and order by the current score
+        return self.race_set.order_by('player_number')
+
 
 class Race(models.Model):
     game = models.ForeignKey(Game)
     name = models.CharField(max_length=15)
     plural_name = models.CharField(max_length=15)
+    slug = models.SlugField(max_length=16)
     player_number = models.PositiveSmallIntegerField()
+
+    class Meta:
+        unique_together = (('game', 'slug'),
+                           ('game', 'player_number'))
 
     def __unicode__(self):
         return self.name
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('starsweb.views.race_detail', (), {'gameslug': self.game.slug,
+                                                   'slug': self.slug})
+
+    def current_ambassador(self):
+        if self.ambassador_set.exists():
+            return self.ambassador_set.get(active=True)
 
 
 class Ambassador(models.Model):

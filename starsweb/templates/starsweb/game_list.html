@@ -1,0 +1,36 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}Games | {{ block.super }}{% endblock %}
+
+{% block content %}
+
+  {% if is_paginated %}
+  {% include "starsweb/list_paging.html" %}
+  {% endif %}
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Turn</th>
+        <th>Last Generated</th>
+	<th>State</th>
+      </tr>
+    </thead>
+    {% for game in game_list %}
+    <tr>
+      <td><a href="{{ game.get_absolute_url }}">{{ game.name }}</a></td>
+      {% with game.current_turn as current %}
+      <td>{{ current|default_if_none:"2400" }}</td>
+      <td>{% if current %}{{ current.last_generated|date:"D, j M Y g:ia T" }}{% else %}{{ game.created|date:"D, j M Y g:ia T" }}{% endif %}</td>
+      {% endwith %}
+      <td>{{ game.state }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  {% if is_paginated %}
+  {% include "starsweb/list_paging.html" %}
+  {% endif %}
+
+{% endblock %}

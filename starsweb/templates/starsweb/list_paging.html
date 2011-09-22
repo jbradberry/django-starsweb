@@ -1,0 +1,8 @@
+{% block paging %}
+  <table class="paging">
+    <tr>
+      <td>{% if page_obj.has_previous %}<a href="?{% if state %}state={{ state }}{% endif %}page={{ page_obj.previous_page_number }}">&laquo; Previous</a>{% endif %}</td>
+      <td>{% if page_obj.has_next %}<a href="?{% if state %}state={{ state }}{% endif %}page={{ page_obj.next_page_number }}">Next &raquo;</a>{% endif %}</td>
+    </tr>
+  </table>
+{% endblock %}

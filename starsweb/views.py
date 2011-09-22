@@ -2,8 +2,8 @@ from django.views.generic.list_detail import object_list, object_detail
 import models
 
 
-def games_list(request, state=None, **kwargs):
-    qs = models.Game.objects.all()
+def game_list(request, state=None, **kwargs):
+    qs = models.Game.objects.select_related('turn')
     if state is None:
         state = request.GET.get('state', None)
     if state is not None:
@@ -11,7 +11,7 @@ def games_list(request, state=None, **kwargs):
     return object_list(request, qs, **kwargs)
 
 
-def games_detail(request, **kwargs):
+def game_detail(request, **kwargs):
     qs = models.Game.objects.all()
     return object_detail(request, qs, **kwargs)
 
