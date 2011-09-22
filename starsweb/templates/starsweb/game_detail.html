@@ -5,22 +5,27 @@
 {% block page_title %}{{ game.name }}{% endblock %}
 
 {% block content %}
-    <h2>{{ game.current_turn }}</h2>
+  <h2>{{ game.current_turn }}</h2>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Race</th>
-          <th>Score</th>
-        </tr>
-      </thead>
-      {% for race in game.race_list %}
+  <div class="description">
+  {{ game.description }}
+  </div>
+
+  <table>
+    <thead>
       <tr>
-        <td>{{ race.current_ambassador.name }}</td>
-        <td>{{ race.name }}</td>
-        <td>{{ race.score }}</td>
+        <th>Name</th>
+        <th>Race</th>
+        <th>Score</th>
       </tr>
-      {% endfor %}
-    </table>
+    </thead>
+    {% for race in game.race_list %}
+    <tr>
+      <td>{{ race.current_ambassador.name }}</td>
+      <td>{{ race.name }}</td>
+      <td>{{ race.score }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
 {% endblock %}
