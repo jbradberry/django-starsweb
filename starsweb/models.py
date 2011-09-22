@@ -13,7 +13,6 @@ class Game(models.Model):
     description = models.TextField(blank=True)
     hosts = models.ManyToManyField("auth.User")
     created = models.DateTimeField(auto_now_add=True)
-    last_generated = models.DateTimeField(null=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
     published = models.BooleanField()
 
@@ -85,9 +84,29 @@ class Turn(models.Model):
 
 
 class Score(models.Model):
+    RANK = 0
+    SCORE = 1
+    RESOURCES = 2
+    TECHLEVELS = 3
+    CAPSHIPS = 4
+    ESCORTSHIPS = 5
+    UNARMEDSHIPS = 6
+    STARBASES = 7
+    PLANETS = 8
+
+    SECTIONS = ((RANK, 'Rank'),
+                (SCORE, 'Score'),
+                (RESOURCES, 'Resources'),
+                (TECHLEVELS, 'Tech Levels'),
+                (CAPSHIPS, 'Capital Ships'),
+                (ESCORTSHIPS, 'Escort Ships'),
+                (UNARMEDSHIPS, 'Unarmed Ships'),
+                (STARBASES, 'Starbases'),
+                (PLANETS, 'Planets'),)
+
     turn = models.ForeignKey(Turn)
     race = models.ForeignKey(Race)
-    section = models.IntegerField()
+    section = models.IntegerField(choices=SECTIONS, default=RANK)
     value = models.IntegerField()
 
     class Meta:
@@ -95,4 +114,4 @@ class Score(models.Model):
         unique_together = ('turn', 'race', 'section')
 
     def __unicode__(self):
-        return u"{0}: {1}".format(self.section, self.value)
+        return u"{0}: {1}".format(self.get_section_display(), self.value)
