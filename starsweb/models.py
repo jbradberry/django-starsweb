@@ -16,9 +16,6 @@ class Game(models.Model):
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
     published = models.BooleanField()
 
-    class Meta:
-        ordering = ('-last_generated', 'name')
-
     def __unicode__(self):
         return self.name
 
