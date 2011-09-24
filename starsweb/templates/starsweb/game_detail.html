@@ -5,11 +5,13 @@
 {% block page_title %}{{ game.name }}{% endblock %}
 
 {% block content %}
-  <h2>{{ game.current_turn }}</h2>
+  <h2>{{ game.current_turn|default_if_none:"Setup" }}</h2>
 
+  {% if game.description_html %}
   <div class="description">
-  {{ game.description }}
+  {{ game.description_html }}
   </div>
+  {% endif %}
 
   <table>
     <thead>
@@ -19,11 +21,11 @@
         <th>Score</th>
       </tr>
     </thead>
-    {% for race in game.race_list %}
+    {% for race in game.races %}
     <tr>
-      <td>{{ race.current_ambassador.name }}</td>
+      <td>{{ race.current_ambassador|default_if_none:"--" }}</td>
       <td>{{ race.name }}</td>
-      <td>{{ race.score }}</td>
+      <td>{{ race.score|default_if_none:"N/A" }}</td>
     </tr>
     {% endfor %}
   </table>
