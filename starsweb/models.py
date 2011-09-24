@@ -1,5 +1,6 @@
 from django.db import models
 from operator import attrgetter
+from template_utils.markup import formatter
 
 
 class Game(models.Model):
@@ -11,7 +12,11 @@ class Game(models.Model):
     )
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
+
     description = models.TextField(blank=True)
+    description_html = models.TextField(blank=True)
+    markup_type = models.CharField(max_length=32)
+
     hosts = models.ManyToManyField("auth.User")
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
@@ -19,6 +24,12 @@ class Game(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.description_html = formatter(
+            self.description, filter_name=self.markup_type,
+            **settings.MARKUP_FILTER_OPTS.get(self.markup_type, {}))
+        super(Game, self).save(*args, **kwargs)
 
     @models.permalink
     def get_absolute_url(self):
