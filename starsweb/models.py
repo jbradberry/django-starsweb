@@ -1,4 +1,5 @@
 from django.db import models
+from operator import attrgetter
 
 
 class Game(models.Model):
@@ -23,14 +24,20 @@ class Game(models.Model):
     def get_absolute_url(self):
         return ('starsweb.views.game_detail', (), {'slug': self.slug})
 
+    @property
     def current_turn(self):
         if self.turn_set.exists():
             return self.turn_set.latest()
 
     @property
-    def race_list(self):
-        # FIXME: annotate and order by the current score
-        return self.race_set.order_by('player_number')
+    def races(self):
+        scores = dict(
+            self.current_turn.scores.filter(
+                section=Score.SCORE).values_list('race__id', 'value'))
+        races = list(self.race_set.all())
+        for race in races:
+            race.score = scores.get(race.id, None)
+        return sorted(races, key=attrgetter('score'), reverse=True)
 
 
 class Race(models.Model):
@@ -52,6 +59,7 @@ class Race(models.Model):
         return ('starsweb.views.race_detail', (), {'gameslug': self.game.slug,
                                                    'slug': self.slug})
 
+    @property
     def current_ambassador(self):
         if self.ambassador_set.exists():
             return self.ambassador_set.get(active=True)
@@ -101,8 +109,8 @@ class Score(models.Model):
                 (STARBASES, 'Starbases'),
                 (PLANETS, 'Planets'),)
 
-    turn = models.ForeignKey(Turn)
-    race = models.ForeignKey(Race)
+    turn = models.ForeignKey(Turn, related_name='scores')
+    race = models.ForeignKey(Race, related_name='scores')
     section = models.IntegerField(choices=SECTIONS, default=RANK)
     value = models.IntegerField()
 
