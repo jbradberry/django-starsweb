@@ -1,9 +1,11 @@
 from django.db import models
+from django.conf import settings
 from operator import attrgetter
 from template_utils.markup import formatter
 
 
 FORMATTERS = tuple((f, f) for f in formatter._filters.iterkeys())
+MARKUP_FILTER_OPTS = getattr(settings, 'MARKUP_FILTER_OPTS', {})
 
 
 class Game(models.Model):
@@ -31,7 +33,7 @@ class Game(models.Model):
     def save(self, *args, **kwargs):
         self.description_html = formatter(
             self.description, filter_name=self.markup_type,
-            **settings.MARKUP_FILTER_OPTS.get(self.markup_type, {}))
+            **MARKUP_FILTER_OPTS.get(self.markup_type, {}))
         super(Game, self).save(*args, **kwargs)
 
     @models.permalink
