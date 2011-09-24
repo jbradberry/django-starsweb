@@ -22,7 +22,7 @@
       <td><a href="{{ game.get_absolute_url }}">{{ game.name }}</a></td>
       {% with game.current_turn as current %}
       <td>{{ current|default_if_none:"2400" }}</td>
-      <td>{% if current %}{{ current.last_generated|date:"D, j M Y g:ia T" }}{% else %}{{ game.created|date:"D, j M Y g:ia T" }}{% endif %}</td>
+      <td>{% if current %}{{ current.generated|date:"D, j M Y g:ia T" }}{% else %}{{ game.created|date:"D, j M Y g:ia T" }}{% endif %}</td>
       {% endwith %}
       <td>{{ game.state }}</td>
     </tr>
