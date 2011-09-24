@@ -47,9 +47,11 @@ class Game(models.Model):
 
     @property
     def races(self):
-        scores = dict(
-            self.current_turn.scores.filter(
-                section=Score.SCORE).values_list('race__id', 'value'))
+        scores = {}
+        if self.current_turn:
+            scores = dict(
+                self.current_turn.scores.filter(
+                    section=Score.SCORE).values_list('race__id', 'value'))
         races = list(self.race_set.all())
         for race in races:
             race.score = scores.get(race.id, None)
