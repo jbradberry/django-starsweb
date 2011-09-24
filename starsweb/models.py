@@ -3,6 +3,9 @@ from operator import attrgetter
 from template_utils.markup import formatter
 
 
+FORMATTERS = tuple((f, f) for f in formatter._filters.iterkeys())
+
+
 class Game(models.Model):
     STATE_CHOICES = (
         ('S', 'Setup'),
@@ -15,7 +18,7 @@ class Game(models.Model):
 
     description = models.TextField(blank=True)
     description_html = models.TextField(blank=True)
-    markup_type = models.CharField(max_length=32)
+    markup_type = models.CharField(max_length=32, choices=FORMATTERS)
 
     hosts = models.ManyToManyField("auth.User")
     created = models.DateTimeField(auto_now_add=True)
