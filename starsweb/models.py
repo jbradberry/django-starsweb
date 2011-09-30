@@ -22,7 +22,7 @@ class Game(models.Model):
     description_html = models.TextField(blank=True)
     markup_type = models.CharField(max_length=32, choices=FORMATTERS)
 
-    hosts = models.ManyToManyField("auth.User")
+    hosts = models.ManyToManyField("auth.User", related_name="stars_games")
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
     published = models.BooleanField()
