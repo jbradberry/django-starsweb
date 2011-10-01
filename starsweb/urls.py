@@ -11,5 +11,6 @@ urlpatterns = patterns('starsweb.views',
 if 'micropress' in settings.INSTALLED_APPS:
     # optional django-micro-press
     urlpatterns += patterns('',
-        (r'^games/(?P<realm_slug>[-\w]+)/news/', include('micropress.urls')),
+        (r'^games/(?P<realm_slug>[-\w]+)/news/', include('micropress.urls'),
+         {'realm_content_type': 'starsweb.Game'}),
     )
