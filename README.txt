@@ -2,7 +2,7 @@
 django-starsweb
 ===============
 
-A play-by-web wrapper for the classic 4X space strategy game Stars!
+A hosting app for the classic 4X space strategy game Stars!
 (http://en.wikipedia.org/wiki/Stars%21).
 
 
