@@ -1,8 +1,8 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from operator import attrgetter
 from template_utils.markup import formatter
-
 
 FORMATTERS = tuple((f, f) for f in formatter._filters.iterkeys())
 MARKUP_FILTER_OPTS = getattr(settings, 'MARKUP_FILTER_OPTS', {})
@@ -39,6 +39,18 @@ class Game(models.Model):
     @models.permalink
     def get_absolute_url(self):
         return ('starsweb.views.game_detail', (), {'slug': self.slug})
+
+    @property
+    def press(self):
+        if 'micropress' in settings.INSTALLED_APPS:
+            press = models.get_model('micropress', 'press')
+            ct = ContentType.objects.get(app_label="starsweb",
+                                         model="game")
+            press = press.objects.filter(
+                content_type=ct,
+                object_id=self.id)
+            if press.exists():
+                return press.get()
 
     @property
     def current_turn(self):

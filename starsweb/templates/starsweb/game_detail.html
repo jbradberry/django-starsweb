@@ -5,12 +5,16 @@
 {% block page_title %}{{ game.name }}{% endblock %}
 
 {% block content %}
-  <h2>{{ game.current_turn|default_if_none:"Setup" }}</h2>
+  <h2>{{ game.current_turn|default_if_none:game.state }}</h2>
 
   {% if game.description_html %}
   <div class="description">
   {{ game.description_html }}
   </div>
+  {% endif %}
+
+  {% if game.press %}
+  <h3>Read <a href="{% url starsweb:press_article_list realm_slug=game.slug %}">{{ game.press }}</a>!</h3>
   {% endif %}
 
   <table>
