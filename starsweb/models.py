@@ -3,9 +3,12 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from operator import attrgetter
 from template_utils.markup import formatter
+from lxml.html.clean import clean_html
+
 
 FORMATTERS = tuple((f, f) for f in formatter._filters.iterkeys())
 MARKUP_FILTER_OPTS = getattr(settings, 'MARKUP_FILTER_OPTS', {})
+LXML_CLEAN_OPTS = getattr(settings, 'LXML_CLEAN_OPTS', {})
 
 
 class Game(models.Model):
@@ -31,9 +34,10 @@ class Game(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        self.description_html = formatter(
+        html = formatter(
             self.description, filter_name=self.markup_type,
             **MARKUP_FILTER_OPTS.get(self.markup_type, {}))
+        self.description_html = clean_html(html, **LXML_CLEAN_OPTS)
         super(Game, self).save(*args, **kwargs)
 
     @models.permalink
