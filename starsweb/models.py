@@ -2,13 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from operator import attrgetter
-from template_utils.markup import formatter
-from lxml.html.clean import clean_html
-
-
-FORMATTERS = tuple((f, f) for f in formatter._filters.iterkeys())
-MARKUP_FILTER_OPTS = getattr(settings, 'MARKUP_FILTER_OPTS', {})
-LXML_CLEAN_OPTS = getattr(settings, 'LXML_CLEAN_OPTS', {})
+from starsweb import markup
 
 
 class Game(models.Model):
@@ -23,7 +17,7 @@ class Game(models.Model):
 
     description = models.TextField(blank=True)
     description_html = models.TextField(blank=True)
-    markup_type = models.CharField(max_length=32, choices=FORMATTERS)
+    markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS)
 
     hosts = models.ManyToManyField("auth.User", related_name="stars_games")
     created = models.DateTimeField(auto_now_add=True)
@@ -34,10 +28,8 @@ class Game(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        html = formatter(
-            self.description, filter_name=self.markup_type,
-            **MARKUP_FILTER_OPTS.get(self.markup_type, {}))
-        self.description_html = clean_html(html, **LXML_CLEAN_OPTS)
+        self.description_html = markup.process(self.description,
+                                               self.markup_type)
         super(Game, self).save(*args, **kwargs)
 
     @models.permalink
