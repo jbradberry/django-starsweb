@@ -9,7 +9,7 @@
 
   {% if game.description_html %}
   <div class="description">
-  {{ game.description_html }}
+  {{ game.description_html|safe }}
   </div>
   {% endif %}
 
