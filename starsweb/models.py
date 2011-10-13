@@ -17,7 +17,8 @@ class Game(models.Model):
 
     description = models.TextField(blank=True)
     description_html = models.TextField(blank=True)
-    markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS)
+    markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
+                                   default=markup.DEFAULT_MARKUP)
 
     hosts = models.ManyToManyField("auth.User", related_name="stars_games")
     created = models.DateTimeField(auto_now_add=True)
