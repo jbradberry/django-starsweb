@@ -71,8 +71,9 @@ class Race(models.Model):
     game = models.ForeignKey(Game)
     name = models.CharField(max_length=15)
     plural_name = models.CharField(max_length=15)
-    slug = models.SlugField(max_length=16)
-    player_number = models.PositiveSmallIntegerField()
+    slug = models.SlugField(max_length=16) # optional
+    player_number = models.PositiveSmallIntegerField() # set automatically
+    # optional race file
 
     class Meta:
         unique_together = (('game', 'slug'),
@@ -87,9 +88,9 @@ class Race(models.Model):
                                                    'slug': self.slug})
 
     @property
-    def current_ambassador(self):
+    def all_ambassadors(self):
         if self.ambassador_set.exists():
-            return self.ambassador_set.get(active=True)
+            return u' / '.join(unicode(a) for a in self.ambassador_set.all())
 
 
 class Ambassador(models.Model):
