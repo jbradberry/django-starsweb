@@ -9,7 +9,7 @@ from forms import CreateGameForm, additional_forms
 
 def game_list(request, state=None, template_object_name='game', **kwargs):
     qs = models.Game.objects.select_related('turn').annotate(
-        generated=Max('turn__generated')).order_by('-generated')
+        generated=Max('turn__generated')).order_by('-generated', '-created')
     if state is None:
         state = request.GET.get('state', None)
     if state is not None:
