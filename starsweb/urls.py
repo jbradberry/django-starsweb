@@ -3,9 +3,10 @@ from django.conf import settings
 
 
 urlpatterns = patterns('starsweb.views',
-    (r'^games/$', 'game_list'),
-    (r'^games/(?P<slug>[-\w]+)/$', 'game_detail'),
-    (r'^games/(?P<gameslug>[-\w]+)/race/(?P<slug>[-\w]+)/$', 'race_detail'),
+    url(r'^new-game/$', 'create_game', name='starsweb_create_game'),
+    url(r'^games/$', 'game_list', name='starsweb_game_list'),
+    url(r'^games/(?P<slug>[-\w]+)/$', 'game_detail', name='starsweb_game_detail'),
+    url(r'^games/(?P<gameslug>[-\w]+)/race/(?P<slug>[-\w]+)/$', 'race_detail', name='starsweb_race_detail'),
 )
 
 if 'micropress' in settings.INSTALLED_APPS:

@@ -1,0 +1,29 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}Create Game | {{ block.super }}{% endblock %}
+
+{% block page_title %}Create Game{% endblock %}
+
+{% block content %}
+<form method="POST" action="">{% csrf_token %}
+  <fieldset>
+  <legend>Game</legend>
+  {{ gameform.as_p }}
+  </fieldset>
+
+  {% if joinform %}
+  <fieldset>
+  <legend>Joins</legend>
+  {{ joinform.as_p }}
+  </fieldset>
+  {% endif %}
+
+  {% if pressform %}
+  <fieldset>
+  <legend>Press</legend>
+  {{ pressform.as_p }}
+  </fieldset>
+  {% endif %}
+<input type="submit" value="Create" />
+</form>
+{% endblock %}

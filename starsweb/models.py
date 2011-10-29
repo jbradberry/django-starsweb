@@ -20,7 +20,7 @@ class Game(models.Model):
     markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
                                    default=markup.DEFAULT_MARKUP)
 
-    hosts = models.ManyToManyField("auth.User", related_name="stars_games")
+    host = models.ForeignKey("auth.User", related_name="stars_games")
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
     published = models.BooleanField()
