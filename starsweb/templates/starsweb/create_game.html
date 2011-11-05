@@ -11,17 +11,17 @@
   {{ gameform.as_p }}
   </fieldset>
 
-  {% if joinform %}
+  {% if joinrequests %}
   <fieldset>
   <legend>Joins</legend>
-  {{ joinform.as_p }}
+  {{ joinrequests.as_p }}
   </fieldset>
   {% endif %}
 
-  {% if pressform %}
+  {% if micropress %}
   <fieldset>
   <legend>Press</legend>
-  {{ pressform.as_p }}
+  {{ micropress.as_p }}
   </fieldset>
   {% endif %}
 <input type="submit" value="Create" />

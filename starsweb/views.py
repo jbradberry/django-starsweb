@@ -31,9 +31,16 @@ def create_game(request):
     context = {'gameform': gameform}
     forms = additional_forms(request.POST or None)
     context.update(forms)
-    if gameform.is_valid() and all(f.is_valid() for f in forms.itervalues()):
+    if (gameform.is_valid()
+        # each subform doesn't have to be valid if we are not creating it
+        and all(not gameform.cleaned_data.get("create_{0}".format(name), True)
+                or f.is_valid()
+                for name, f in forms.iteritems())
+        ):
         game = gameform.save()
-        for f in forms.itervalues():
+        for name, f in forms.iteritems():
+            if not gameform.cleaned_data.get("create_{0}".format(name), True):
+                continue
             obj = f.save(commit=False)
             if not obj: continue
             obj.realm = game
