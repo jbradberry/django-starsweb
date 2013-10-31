@@ -1,18 +1,27 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, url, include
+from django.core.urlresolvers import reverse_lazy
+from django.views.generic import RedirectView
 from django.conf import settings
 
+from . import views
 
-urlpatterns = patterns('starsweb.views',
-    url(r'^new-game/$', 'create_game', name='starsweb_create_game'),
-    url(r'^games/$', 'game_list', name='starsweb_game_list'),
-    url(r'^games/(?P<slug>[-\w]+)/$', 'game_detail', name='starsweb_game_detail'),
-    url(r'^games/(?P<gameslug>[-\w]+)/race/(?P<slug>[-\w]+)/$', 'race_detail', name='starsweb_race_detail'),
+
+urlpatterns = patterns('',
+    url(r'^$', RedirectView.as_view(url=reverse_lazy('game_list'),
+                                    permanent=False)),
+    url(r'^game/$', views.GameListView.as_view(), name='game_list'),
+    url(r'^game/(?P<slug>[-\w]+)/$', views.GameDetailView.as_view(),
+        name='game_detail'),
+    url(r'^game/(?P<gameslug>[-\w]+)/race/(?P<slug>[-\w]+)/$',
+        views.RaceDetailView.as_view(), name='race_detail'),
+    url(r'^create/$', views.GameCreateView.as_view(), name='create_game'),
 )
 
 if 'micropress' in settings.INSTALLED_APPS:
     # optional django-micro-press
     urlpatterns += patterns('',
-        (r'^games/(?P<realm_slug>[-\w]+)/news/',
-         include('micropress.urls', namespace="starsweb", app_name="micropress"),
+        (r'^game/(?P<realm_slug>[-\w]+)/news/',
+         include('micropress.urls', namespace="starsweb",
+                 app_name="micropress"),
          {'realm_content_type': 'starsweb.Game'}),
     )

@@ -1,8 +1,10 @@
-from django.db import models
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.urlresolvers import reverse
+from django.conf import settings
+from django.db import models
 from operator import attrgetter
-from starsweb import markup
+
+from . import markup
 
 
 class Game(models.Model):
@@ -33,9 +35,8 @@ class Game(models.Model):
                                                self.markup_type)
         super(Game, self).save(*args, **kwargs)
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('starsweb.views.game_detail', (), {'slug': self.slug})
+        return reverse('game_detail', kwargs={'slug': self.slug})
 
     @property
     def press(self):
@@ -82,10 +83,9 @@ class Race(models.Model):
     def __unicode__(self):
         return self.name
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('starsweb.views.race_detail', (), {'gameslug': self.game.slug,
-                                                   'slug': self.slug})
+        return reverse('race_detail',
+                       kwargs={'gameslug': self.game.slug, 'slug': self.slug})
 
     @property
     def all_ambassadors(self):
