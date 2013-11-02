@@ -81,7 +81,7 @@ class Race(models.Model):
                            ('game', 'player_number'))
 
     def __unicode__(self):
-        return self.name
+        return self.plural_name
 
     def get_absolute_url(self):
         return reverse('race_detail',

@@ -26,13 +26,11 @@
       </tr>
     </thead>
     {% for race in game.races %}
-    {% if race.all_ambassadors %}
     <tr>
-      <td>{{ race.all_ambassadors }}</td>
-      <td>{{ race.name }}</td>
+      <td>{{ race.all_ambassadors|default_if_none:"--" }}</td>
+      <td>{{ race.plural_name }}</td>
       <td>{{ race.score|default_if_none:"N/A" }}</td>
     </tr>
-    {% endif %}
     {% endfor %}
   </table>
 
