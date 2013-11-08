@@ -2,11 +2,12 @@
 
 {% block title %}{{ game.name }} | Games | {{ block.super }}{% endblock %}
 
-{% block page_title %}{{ game.name }}{% endblock %}
+{% block header %}
+<h1>{{ game.name }}</h1>
+<p class="lead">{% if game.current_turn %}Year {{ game.current_turn }}{% else %}{{ game.state }}{% endif %}</p>
+{% endblock %}
 
 {% block content %}
-  <h2>{{ game.current_turn|default_if_none:game.state }}</h2>
-
   {% if game.description_html %}
   <div class="description">
   {{ game.description_html|safe }}
@@ -17,19 +18,19 @@
   <h3>Read <a href="{% url 'starsweb:article_list' realm_slug=game.slug issue='current' %}">{{ game.press }}</a>!</h3>
   {% endif %}
 
-  <table>
+  <table class="table">
     <thead>
-      <tr>
+	<tr>
         <th>Name</th>
         <th>Race</th>
         <th>Score</th>
-      </tr>
+	</tr>
     </thead>
     {% for race in game.races %}
     <tr>
-      <td>{{ race.all_ambassadors|default_if_none:"--" }}</td>
-      <td>{{ race.plural_name }}</td>
-      <td>{{ race.score|default_if_none:"N/A" }}</td>
+	<td>{{ race.all_ambassadors|default_if_none:"--" }}</td>
+	<td>{{ race.plural_name }}</td>
+	<td>{{ race.score|default_if_none:"N/A" }}</td>
     </tr>
     {% endfor %}
   </table>

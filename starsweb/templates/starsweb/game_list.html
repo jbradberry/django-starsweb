@@ -2,13 +2,15 @@
 
 {% block title %}Games | {{ block.super }}{% endblock %}
 
+{% block header %}<h1>Games</h1>{% endblock %}
+
 {% block content %}
 
   {% if is_paginated %}
   {% include "starsweb/list_paging.html" %}
   {% endif %}
 
-  <table>
+  <table class="table">
     <thead>
       <tr>
         <th>Name</th>
