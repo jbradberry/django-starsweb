@@ -2,6 +2,7 @@ from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.decorators import permission_required
 from django.utils.decorators import method_decorator
 from django.db.models import Max
+import json
 
 from . import models
 from . import forms
@@ -38,6 +39,36 @@ class GameCreateView(CreateView):
     def form_valid(self, form):
         form.instance.host = self.request.user
         return super(GameCreateView, self).form_valid(form)
+
+
+class ScoreGraphView(DetailView):
+    model = models.Game
+    template_name = 'starsweb/score_graph.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ScoreGraphView, self).get_context_data(**kwargs)
+        section_name = self.request.GET.get('section')
+        if section_name:
+            section = getattr(models.Score, section_name.upper(), None)
+        else:
+            section = models.Score.SCORE
+
+        scores = models.Score.objects.select_related(
+            'turn', 'race'
+        ).filter(
+            turn__game=self.object, section=section
+        ).values('turn__year', 'race__plural_name', 'value')
+
+        context['races'] = json.dumps(
+            list(self.object.race_set.values_list('plural_name', flat=True))
+        )
+
+        context['scores'] = json.dumps([{'year': score['turn__year'],
+                                         'race': score['race__plural_name'],
+                                         'value': score['value']}
+                                         for score in scores])
+        context['scoretype'] = dict(models.Score.SECTIONS).get(section, '')
+        return context
 
 
 class RaceDetailView(DetailView):
