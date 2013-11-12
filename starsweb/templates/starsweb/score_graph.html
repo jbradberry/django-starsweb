@@ -36,7 +36,7 @@ var scores = {{ scores|safe }};
 var races = {{ races|safe }};
 var scoretype = "{{ scoretype }}";
 
-var margin = {top: 20, right: 20, bottom: 30, left: 80},
+var margin = {top: 20, right: 130, bottom: 30, left: 80},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -116,16 +116,16 @@ var legend = svg.selectAll(".legend")
       .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
 
 legend.append("rect")
-      .attr("x", width - 18)
+      .attr("x", width + 6)
       .attr("width", 18)
       .attr("height", 18)
       .style("fill", color);
 
 legend.append("text")
-      .attr("x", width - 24)
+      .attr("x", width + 28)
       .attr("y", 9)
       .attr("dy", ".35em")
-      .style("text-anchor", "end")
+      .style("text-anchor", "start")
       .text(function(d) { return d; });
 
 </script>
