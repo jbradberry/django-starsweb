@@ -26,11 +26,11 @@
         <th>Score</th>
 	</tr>
     </thead>
-    {% for race in game.races %}
+    {% for race, score in races %}
     <tr>
 	<td>{{ race.all_ambassadors|default_if_none:"--" }}</td>
-	<td>{{ race.plural_name }}</td>
-	<td>{{ race.score|default_if_none:"N/A" }}</td>
+	<td>{{ race }}</td>
+	<td>{{ score|default_if_none:"N/A" }}</td>
     </tr>
     {% endfor %}
   </table>

@@ -10,7 +10,7 @@ from . import forms
 
 class GameListView(ListView):
     queryset = models.Game.objects.select_related('turn').annotate(
-        generated=Max('turn__generated')).order_by('-generated', '-created')
+        generated=Max('turns__generated')).order_by('-generated', '-created')
 
     state = None
 
@@ -26,6 +26,20 @@ class GameListView(ListView):
 
 class GameDetailView(DetailView):
     model = models.Game
+
+    def get_context_data(self, **kwargs):
+        context = super(GameDetailView, self).get_context_data(**kwargs)
+        scores = {}
+        turn = self.object.current_turn
+        if turn:
+            scores.update(
+                turn.scores.filter(section=models.Score.SCORE
+                                   ).values_list('race__plural_name', 'value'))
+        context['races'] = sorted(((race, scores.get(str(race)))
+                                   for race in self.object.races.all()),
+                                  key=lambda (r, s): (s, str(r), r),
+                                  reverse=True)
+        return context
 
 
 class GameCreateView(CreateView):
@@ -60,7 +74,7 @@ class ScoreGraphView(DetailView):
         ).values('turn__year', 'race__plural_name', 'value')
 
         context['races'] = json.dumps(
-            list(self.object.race_set.values_list('plural_name', flat=True))
+            list(self.object.races.values_list('plural_name', flat=True))
         )
 
         context['scores'] = json.dumps([{'year': score['turn__year'],

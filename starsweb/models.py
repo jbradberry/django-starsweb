@@ -22,7 +22,7 @@ class Game(models.Model):
     markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
                                    default=markup.DEFAULT_MARKUP)
 
-    host = models.ForeignKey("auth.User", related_name="stars_games")
+    host = models.ForeignKey("auth.User", related_name='stars_games')
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
     published = models.BooleanField()
@@ -52,24 +52,12 @@ class Game(models.Model):
 
     @property
     def current_turn(self):
-        if self.turn_set.exists():
-            return self.turn_set.latest()
-
-    @property
-    def races(self):
-        scores = {}
-        if self.current_turn:
-            scores = dict(
-                self.current_turn.scores.filter(
-                    section=Score.SCORE).values_list('race__id', 'value'))
-        races = list(self.race_set.all())
-        for race in races:
-            race.score = scores.get(race.id, None)
-        return sorted(races, key=attrgetter('score'), reverse=True)
+        if self.turns.exists():
+            return self.turns.latest()
 
 
 class Race(models.Model):
-    game = models.ForeignKey(Game)
+    game = models.ForeignKey(Game, related_name='races')
     name = models.CharField(max_length=15)
     plural_name = models.CharField(max_length=15)
     slug = models.SlugField(max_length=16) # optional
@@ -89,12 +77,12 @@ class Race(models.Model):
 
     @property
     def all_ambassadors(self):
-        if self.ambassador_set.exists():
-            return u' / '.join(unicode(a) for a in self.ambassador_set.all())
+        if self.ambassadors.exists():
+            return u' / '.join(unicode(a) for a in self.ambassadors.all())
 
 
 class Ambassador(models.Model):
-    race = models.ForeignKey(Race)
+    race = models.ForeignKey(Race, related_name='ambassadors')
     user = models.ForeignKey("auth.User")
     name = models.CharField(max_length=128)
     active = models.BooleanField(default=True)
@@ -104,7 +92,7 @@ class Ambassador(models.Model):
 
 
 class Turn(models.Model):
-    game = models.ForeignKey(Game)
+    game = models.ForeignKey(Game, related_name='turns')
     year = models.IntegerField()
     generated = models.DateTimeField(auto_now_add=True)
 
