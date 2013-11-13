@@ -15,7 +15,7 @@
   {% endif %}
 
   {% if game.press %}
-  <h3>Read <a href="{% url 'starsweb:article_list' realm_slug=game.slug issue='current' %}">{{ game.press }}</a>!</h3>
+  <h3>Read <a href="{% url 'starsweb:article_list' realm_slug=game.slug %}">{{ game.press }}</a>!</h3>
   {% endif %}
 
   <table class="table">
