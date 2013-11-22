@@ -25,7 +25,7 @@ class Game(models.Model):
     host = models.ForeignKey("auth.User", related_name='stars_games')
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
-    published = models.BooleanField()
+    published = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.name

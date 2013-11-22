@@ -45,6 +45,7 @@ class GameDetailView(DetailView):
 class GameCreateView(CreateView):
     model = models.Game
     form_class = forms.CreateGameForm
+    template_name_suffix = '_create_form'
 
     @method_decorator(permission_required('starsweb.add_game'))
     def dispatch(self, *args, **kwargs):

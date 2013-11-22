@@ -8,22 +8,8 @@
 <form method="POST" action="">{% csrf_token %}
   <fieldset>
   <legend>Game</legend>
-  {{ gameform.as_p }}
+  {{ form.as_p }}
   </fieldset>
-
-  {% if joinrequests %}
-  <fieldset>
-  <legend>Joins</legend>
-  {{ joinrequests.as_p }}
-  </fieldset>
-  {% endif %}
-
-  {% if micropress %}
-  <fieldset>
-  <legend>Press</legend>
-  {{ micropress.as_p }}
-  </fieldset>
-  {% endif %}
 <input type="submit" value="Create" />
 </form>
 {% endblock %}
