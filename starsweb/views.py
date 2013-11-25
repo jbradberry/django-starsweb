@@ -39,7 +39,7 @@ class GameDetailView(DetailView):
                                    ).values_list('race__plural_name', 'value'))
         context['races'] = sorted(((race, scores.get(str(race)))
                                    for race in self.object.races.all()),
-                                  key=lambda (r, s): (-s if s else None,
+                                  key=lambda (r, s): (s if s is None else -s,
                                                       r.player_number, r.pk))
         return super(GameDetailView, self).get_context_data(**context)
 
