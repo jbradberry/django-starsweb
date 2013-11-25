@@ -29,7 +29,8 @@ class GameDetailView(DetailView):
     model = models.Game
 
     def get_context_data(self, **kwargs):
-        context = super(GameDetailView, self).get_context_data(**kwargs)
+        context = {}
+
         scores = {}
         turn = self.object.current_turn
         if turn:
@@ -40,7 +41,7 @@ class GameDetailView(DetailView):
                                    for race in self.object.races.all()),
                                   key=lambda (r, s): (-s if s else None,
                                                       r.player_number, r.pk))
-        return context
+        return super(GameDetailView, self).get_context_data(**context)
 
 
 class GameCreateView(CreateView):
@@ -146,7 +147,7 @@ class ScoreGraphView(DetailView):
     template_name = 'starsweb/score_graph.html'
 
     def get_context_data(self, **kwargs):
-        context = super(ScoreGraphView, self).get_context_data(**kwargs)
+        context = {}
         section_name = self.request.GET.get('section')
         if section_name:
             section = getattr(models.Score, section_name.upper(), None)
@@ -168,7 +169,7 @@ class ScoreGraphView(DetailView):
                                          'value': score['value']}
                                          for score in scores])
         context['scoretype'] = dict(models.Score.SECTIONS).get(section, '')
-        return context
+        return super(ScoreGraphView, self).get_context_data(**context)
 
 
 class RaceDetailView(DetailView):
