@@ -4,7 +4,7 @@
 
 {% block header %}
 <h1>{{ game.name }}</h1>
-<p class="lead">{% if game.current_turn %}Year {{ game.current_turn }}{% else %}{{ game.state }}{% endif %}</p>
+<p class="lead">{% if game.current_turn %}Year {{ game.current_turn }}{% endif %}[{{ game.get_state_display }}]</p>
 {% endblock %}
 
 {% block content %}
