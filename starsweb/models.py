@@ -61,7 +61,7 @@ class Race(models.Model):
     name = models.CharField(max_length=15)
     plural_name = models.CharField(max_length=15)
     slug = models.SlugField(max_length=16) # optional
-    player_number = models.PositiveSmallIntegerField() # set automatically
+    player_number = models.PositiveSmallIntegerField(null=True, blank=True)
     # optional race file
 
     class Meta:

@@ -1,7 +1,8 @@
 from django.views.generic import ListView, DetailView, CreateView
-from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
 from django.db.models import Max
+from django.http import Http404, HttpResponseForbidden
 import json
 
 from . import models
@@ -54,6 +55,90 @@ class GameCreateView(CreateView):
     def form_valid(self, form):
         form.instance.host = self.request.user
         return super(GameCreateView, self).form_valid(form)
+
+
+class ParentGameMixin(object):
+    context_game_name = 'game'
+
+    game_slug_field = 'slug'
+    pk_game_kwarg = 'game_pk'
+    slug_game_kwarg = 'game_slug'
+
+    def get_game(self):
+        game_queryset = models.Game.objects.all()
+
+        pk = self.kwargs.get(self.pk_game_kwarg, None)
+        slug = self.kwargs.get(self.slug_game_kwarg, None)
+        if pk is not None:
+            game_queryset = game_queryset.filter(pk=pk)
+        elif slug is not None:
+            game_queryset = game_queryset.filter(
+                **{self.game_slug_field: slug})
+        else:
+            raise AttributeError(
+                "{0} must be called with either a game pk or a slug.".format(
+                    self.__class__.__name__))
+
+        try:
+            return game_queryset.get()
+        except models.Game.DoesNotExist:
+            raise Http404("No game found matching the query.")
+
+    def get_context_data(self, **kwargs):
+        context = {self.context_game_name: self.game}
+        context.update(kwargs)
+        return super(ParentGameMixin, self).get_context_data(**context)
+
+
+class GameJoinView(ParentGameMixin, CreateView):
+    template_name = 'starsweb/game_join_form.html'
+
+    form_class = forms.RaceForm
+    second_form_class = forms.AmbassadorForm
+    context_second_form_name = 'ambassador_form'
+
+    def get_success_url(self):
+        return self.game.get_absolute_url()
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        if self.game.state != 'S':
+            return HttpResponseForbidden("Game is no longer in setup.")
+
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        second_form = self.get_form(self.second_form_class)
+        second_form.prefix = 'ambassador'
+
+        return self.render_to_response(
+            self.get_context_data(
+                **{'form': form, self.context_second_form_name: second_form}))
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        if self.game.state != 'S':
+            return HttpResponseForbidden("Game is no longer in setup.")
+
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        form.instance.game = self.game
+        second_form = self.get_form(self.second_form_class)
+        second_form.prefix = 'ambassador'
+
+        if form.is_valid() and second_form.is_valid():
+            response = self.form_valid(form)
+            second_form.instance.race = self.object
+            second_form.instance.user = self.request.user
+            second_form.save()
+            return response
+        else:
+            return self.form_invalid(form)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(GameJoinView, self).dispatch(*args, **kwargs)
 
 
 class ScoreGraphView(DetailView):

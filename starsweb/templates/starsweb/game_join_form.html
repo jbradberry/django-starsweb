@@ -1,0 +1,20 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}Join Game | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>Join Game</h1>{% endblock %}
+
+{% block content %}
+<form method="POST" action="">{% csrf_token %}
+  <fieldset>
+    <legend>Race</legend>
+    {{ form.as_p }}
+  </fieldset>
+
+  <fieldset>
+    <legend>Ambassador</legend>
+    {{ ambassador_form.as_p }}
+  </fieldset>
+<input type="submit" value="Join" />
+</form>
+{% endblock %}
