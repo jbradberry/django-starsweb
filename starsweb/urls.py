@@ -14,7 +14,7 @@ urlpatterns = patterns('',
         name='game_detail'),
     url(r'^game/(?P<slug>[-\w]+)/score/$',
         views.ScoreGraphView.as_view(), name='score_graph'),
-    url(r'^game/(?P<gameslug>[-\w]+)/race/(?P<slug>[-\w]+)/$',
+    url(r'^game/(?P<game_slug>[-\w]+)/race/(?P<slug>[-\w]+)/$',
         views.RaceDetailView.as_view(), name='race_detail'),
     url(r'^create/$', views.GameCreateView.as_view(), name='create_game'),
 )

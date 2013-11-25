@@ -73,7 +73,7 @@ class Race(models.Model):
 
     def get_absolute_url(self):
         return reverse('race_detail',
-                       kwargs={'gameslug': self.game.slug, 'slug': self.slug})
+                       kwargs={'game_slug': self.game.slug, 'slug': self.slug})
 
     @property
     def all_ambassadors(self):

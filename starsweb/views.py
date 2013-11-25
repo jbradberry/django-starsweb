@@ -92,4 +92,4 @@ class RaceDetailView(DetailView):
     def get_queryset(self):
         queryset = super(RaceDetailView, self).get_queryset()
 
-        return queryset.filter(game__slug=self.kwargs.get('gameslug'))
+        return queryset.filter(game__slug=self.kwargs.get('game_slug'))
