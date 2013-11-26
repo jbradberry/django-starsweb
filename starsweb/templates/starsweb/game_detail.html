@@ -29,7 +29,7 @@
     {% for race, score in races %}
     <tr>
 	<td>{{ race.all_ambassadors|default_if_none:"--" }}</td>
-	<td>{{ race }}</td>
+	<td>The {{ race }}</td>
 	<td>{{ score|default_if_none:"N/A" }}</td>
     </tr>
     {% endfor %}
