@@ -132,7 +132,6 @@ class GameJoinViewTestCase(TestCase):
             join_url,
             {'name': "Gestalti",
              'plural_name': "Gestalti",
-             'slug': "gestalti",
              'ambassador-name': "KonTiki"}
         )
         self.assertRedirects(response,
@@ -163,7 +162,6 @@ class GameJoinViewTestCase(TestCase):
             join_url,
             {'name': "Gestalti",
              'plural_name': "Gestalti",
-             'slug': "gestalti",
              'ambassador-name': "KonTiki"}
         )
         self.assertRedirects(response,
@@ -186,35 +184,11 @@ class GameJoinViewTestCase(TestCase):
             join_url,
             {'name': "Gestalti",
              'plural_name': "Gestalti",
-             'slug': "gestalti",
              'ambassador-name': "KonTiki"}
         )
         self.assertEqual(response.status_code, 403)
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
-
-    def test_join_same_slug(self):
-        race = models.Race(game=self.game,
-                           name='Gestalti',
-                           plural_name='Gestalti',
-                           slug='gestalti')
-        race.save()
-        ambassador = models.Ambassador(race=race,
-                                       user=self.user,
-                                       name="KonTiki")
-        ambassador.save()
-
-        join_url = reverse('game_join', kwargs={'game_slug': self.game.slug})
-        response = self.client.post(
-            join_url,
-            {'name': "Histalti",
-             'plural_name': "Histalti",
-             'slug': "gestalti",
-             'ambassador-name': "LonTiki"}
-        )
-        self.assertContains(response, "is already being used for this game.")
-        self.assertEqual(models.Race.objects.count(), 1)
-        self.assertEqual(models.Ambassador.objects.count(), 1)
 
 
 class RaceUpdateViewTestCase(TestCase):
@@ -249,7 +223,6 @@ class RaceUpdateViewTestCase(TestCase):
         response = self.client.get(update_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Gestalti")
-        self.assertContains(response, "gestalti")
 
     def test_successful_update(self):
         self.assertEqual(models.Race.objects.count(), 1)
@@ -260,8 +233,7 @@ class RaceUpdateViewTestCase(TestCase):
                                      'race_slug': 'gestalti'})
         response = self.client.post(update_url,
                                     {'name': 'Gestalti2',
-                                     'plural_name': 'Gestalti2',
-                                     'slug': 'gestalti'},
+                                     'plural_name': 'Gestalti2'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "The Gestalti2")
@@ -279,8 +251,7 @@ class RaceUpdateViewTestCase(TestCase):
                                      'race_slug': 'gestalti'})
         response = self.client.post(update_url,
                                     {'name': 'Histalti',
-                                     'plural_name': 'Histalti',
-                                     'slug': 'histalti'},
+                                     'plural_name': 'Histalti'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "The Histalti")
@@ -299,8 +270,7 @@ class RaceUpdateViewTestCase(TestCase):
                                      'race_slug': 'gestalti'})
         response = self.client.post(update_url,
                                     {'name': 'A'*16,
-                                     'plural_name': 'Gestalti',
-                                     'slug': 'gestalti'})
+                                     'plural_name': 'Gestalti'})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ensure this value has at most 15 characters")
         self.assertEqual(models.Race.objects.count(), 1)
@@ -322,8 +292,7 @@ class RaceUpdateViewTestCase(TestCase):
 
         response = self.client.post(update_url,
                                     {'name': 'Histalti',
-                                     'plural_name': 'Histalti',
-                                     'slug': 'histalti'})
+                                     'plural_name': 'Histalti'})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
@@ -345,8 +314,7 @@ class RaceUpdateViewTestCase(TestCase):
 
         response = self.client.post(update_url,
                                     {'name': 'Histalti',
-                                     'plural_name': 'Histalti',
-                                     'slug': 'histalti'})
+                                     'plural_name': 'Histalti'})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Race.objects.get().name, "Gestalti")
@@ -386,8 +354,7 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.game.save()
         race = models.Race(game=self.game,
                            name='Gestalti',
-                           plural_name='Gestalti',
-                           slug='gestalti')
+                           plural_name='Gestalti')
         race.save()
         ambassador = models.Ambassador(race=race,
                                        user=self.user,

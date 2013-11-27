@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.template.defaultfilters import slugify
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import models
@@ -60,12 +61,14 @@ class Race(models.Model):
     game = models.ForeignKey(Game, related_name='races')
     name = models.CharField(max_length=15)
     plural_name = models.CharField(max_length=15)
-    slug = models.SlugField(max_length=16) # optional
+    slug = models.SlugField(max_length=16)
     player_number = models.PositiveSmallIntegerField(null=True, blank=True)
     # optional race file
 
     class Meta:
         unique_together = (('game', 'slug'),
+                           ('game', 'name'),
+                           ('game', 'plural_name'),
                            ('game', 'player_number'))
 
     def __unicode__(self):
@@ -79,6 +82,21 @@ class Race(models.Model):
     def all_ambassadors(self):
         if self.ambassadors.exists():
             return u' / '.join(unicode(a) for a in self.ambassadors.all())
+
+    def save(self, *args, **kwargs):
+        max_length = self._meta.get_field('slug').max_length
+        slug, num, end = slugify(self.plural_name), 1, ''
+        if len(slug) > max_length:
+            slug = slug[:max_length]
+
+        while self.game.races.filter(slug=slug+end).exists():
+            num += 1
+            end = str(num)
+            if len(slug) + len(end) > max_length:
+                slug = slug[:max_length - len(end)]
+
+        self.slug = slug + end
+        super(Race, self).save(*args, **kwargs)
 
 
 class Ambassador(models.Model):
