@@ -176,6 +176,37 @@ class GameJoinView(ParentGameMixin, CreateView):
         return super(GameJoinView, self).dispatch(*args, **kwargs)
 
 
+class RaceUpdateView(ParentGameMixin, UpdateView):
+    model = models.Race
+    form_class = forms.RaceForm
+
+    slug_url_kwarg = 'race_slug'
+
+    def get_success_url(self):
+        return self.game.get_absolute_url()
+
+    def get_queryset(self):
+        return self.game.races.all()
+
+    def get_object(self, queryset=None):
+        race = super(RaceUpdateView, self).get_object()
+        if not race.ambassadors.filter(user=self.request.user).exists():
+            raise PermissionDenied
+        return race
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        return super(RaceUpdateView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        return super(RaceUpdateView, self).post(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RaceUpdateView, self).dispatch(*args, **kwargs)
+
+
 class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
     model = models.Ambassador
     form_class = forms.AmbassadorForm

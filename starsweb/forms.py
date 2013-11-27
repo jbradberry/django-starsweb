@@ -18,9 +18,12 @@ class RaceForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super(RaceForm, self).clean()
         game = self.instance.game
+        r_id = self.instance.id
         slug = cleaned_data.get('slug')
 
-        if models.Race.objects.filter(game=game, slug=slug).exists():
+        existing_race = models.Race.objects.filter(game=game, slug=slug)
+
+        if existing_race and r_id != existing_race.get().id:
             raise forms.ValidationError(
                 "The race slug '{0}' is already being used for"
                 " this game.".format(slug))
