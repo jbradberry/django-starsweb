@@ -215,3 +215,130 @@ class GameJoinViewTestCase(TestCase):
         self.assertContains(response, "is already being used for this game.")
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
+
+
+class AmbassadorUpdateViewTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.game = models.Game(
+            name="Total War in Ulfland",
+            slug="total-war-in-ulfland",
+            host=self.user,
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+        race = models.Race(game=self.game,
+                           name='Gestalti',
+                           plural_name='Gestalti',
+                           slug='gestalti')
+        race.save()
+        ambassador = models.Ambassador(race=race,
+                                       user=self.user,
+                                       name="KonTiki")
+        ambassador.save()
+
+    def test_view_form(self):
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "KonTiki")
+
+    def test_successful_update(self):
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.post(update_url,
+                                    {'name': 'Kon-Tiki'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The Gestalti")
+        self.assertContains(response, "Kon-Tiki")
+        self.assertNotContains(response, "KonTiki")
+
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+    def test_name_too_long(self):
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.post(update_url,
+                                    {'name': 'a'*129})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ensure this value has at most 128 characters")
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.get().name, "KonTiki")
+
+    def test_anonymous(self):
+        self.client.logout()
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   update_url))
+
+        response = self.client.post(update_url,
+                                    {'name': 'Kon-Tiki'})
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   update_url))
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.get().name, "KonTiki")
+
+    def test_not_authorized(self):
+        self.user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(update_url,
+                                    {'name': 'Kon-Tiki'})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.get().name, "KonTiki")
+
+    def test_race_does_not_exist(self):
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'histalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_game_does_not_exist(self):
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': '500-years-after',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 404)

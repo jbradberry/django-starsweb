@@ -184,15 +184,13 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
         return self.game.get_absolute_url()
 
     def get_queryset(self):
-        return self.race.ambassadors.all()
+        return self.race.ambassadors.filter(user=self.request.user)
 
-    def get_object(self, queryset=None):
-        queryset = self.get_queryset()
-        queryset = queryset.filter(user=self.request.user)
-        if not queryset:
-            raise PermissionDenied(
-                "You are not authorized to edit any ambassadors for this race.")
-        return queryset.get()
+    def get_object(self):
+        try:
+            return self.get_queryset().get()
+        except models.Ambassador.DoesNotExist:
+            raise PermissionDenied
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
