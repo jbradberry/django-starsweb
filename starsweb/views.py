@@ -41,6 +41,7 @@ class GameDetailView(DetailView):
                                    for race in self.object.races.all()),
                                   key=lambda (r, s): (s if s is None else -s,
                                                       r.player_number, r.pk))
+        context.update(kwargs)
         return super(GameDetailView, self).get_context_data(**context)
 
 
@@ -89,6 +90,10 @@ class ParentGameMixin(object):
         context = {self.context_game_name: self.game}
         context.update(kwargs)
         return super(ParentGameMixin, self).get_context_data(**context)
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        return super(ParentGameMixin, self).get(request, *args, **kwargs)
 
 
 class GameJoinView(ParentGameMixin, CreateView):
@@ -169,6 +174,7 @@ class ScoreGraphView(DetailView):
                                          'value': score['value']}
                                          for score in scores])
         context['scoretype'] = dict(models.Score.SECTIONS).get(section, '')
+        context.update(kwargs)
         return super(ScoreGraphView, self).get_context_data(**context)
 
 
