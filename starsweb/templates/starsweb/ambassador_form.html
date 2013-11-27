@@ -1,0 +1,12 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}Update Ambassador | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>Update Ambassador</h1>{% endblock %}
+
+{% block content %}
+<form method="POST" action="">{% csrf_token %}
+  {{ form.as_p }}
+<input type="submit" value="Update" />
+</form>
+{% endblock %}

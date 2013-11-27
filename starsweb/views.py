@@ -1,8 +1,9 @@
-from django.views.generic import ListView, DetailView, CreateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
-from django.db.models import Max
+from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponseForbidden
+from django.db.models import Max
 import json
 
 from . import models
@@ -91,9 +92,37 @@ class ParentGameMixin(object):
         context.update(kwargs)
         return super(ParentGameMixin, self).get_context_data(**context)
 
-    def get(self, request, *args, **kwargs):
-        self.game = self.get_game()
-        return super(ParentGameMixin, self).get(request, *args, **kwargs)
+
+class ParentRaceMixin(ParentGameMixin):
+    context_race_name = 'race'
+
+    race_slug_field = 'slug'
+    pk_race_kwarg = 'race_pk'
+    slug_race_kwarg = 'race_slug'
+
+    def get_race(self):
+        race_queryset = self.game.races.all()
+        pk = self.kwargs.get(self.pk_race_kwarg, None)
+        slug = self.kwargs.get(self.slug_race_kwarg, None)
+        if pk is not None:
+            race_queryset = race_queryset.filter(pk=pk)
+        elif slug is not None:
+            race_queryset = race_queryset.filter(
+                **{self.race_slug_field: slug})
+        else:
+            raise AttributeError(
+                "{0} must be called with either a race pk or a slug.".format(
+                    self.__class__.__name__))
+
+        try:
+            return race_queryset.get()
+        except models.Race.DoesNotExist:
+            raise Http404("No race found matching the query.")
+
+    def get_context_data(self, **kwargs):
+        context = {self.context_race_name: self.race}
+        context.update(kwargs)
+        return super(ParentRaceMixin, self).get_context_data(**context)
 
 
 class GameJoinView(ParentGameMixin, CreateView):
@@ -145,6 +174,39 @@ class GameJoinView(ParentGameMixin, CreateView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(GameJoinView, self).dispatch(*args, **kwargs)
+
+
+class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
+    model = models.Ambassador
+    form_class = forms.AmbassadorForm
+
+    def get_success_url(self):
+        return self.game.get_absolute_url()
+
+    def get_queryset(self):
+        return self.race.ambassadors.all()
+
+    def get_object(self, queryset=None):
+        queryset = self.get_queryset()
+        queryset = queryset.filter(user=self.request.user)
+        if not queryset:
+            raise PermissionDenied(
+                "You are not authorized to edit any ambassadors for this race.")
+        return queryset.get()
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        return super(AmbassadorUpdateView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        return super(AmbassadorUpdateView, self).post(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(AmbassadorUpdateView, self).dispatch(*args, **kwargs)
 
 
 class ScoreGraphView(DetailView):
