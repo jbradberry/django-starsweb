@@ -142,6 +142,7 @@ class GameJoinViewTestCase(TestCase):
         race = models.Race.objects.get()
         self.assertEqual(race.name, "Gestalti")
         self.assertEqual(race.game, self.game)
+        self.assertEqual(race.slug, "gestalti")
         ambassador = models.Ambassador.objects.get()
         self.assertEqual(ambassador.name, "KonTiki")
         self.assertEqual(ambassador.race, race)
@@ -233,13 +234,14 @@ class RaceUpdateViewTestCase(TestCase):
                                      'race_slug': 'gestalti'})
         response = self.client.post(update_url,
                                     {'name': 'Gestalti2',
-                                     'plural_name': 'Gestalti2'},
+                                     'plural_name': 'Gestalti'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "The Gestalti2")
+        self.assertContains(response, "The Gestalti")
         self.assertContains(response, "KonTiki")
 
         self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Race.objects.get().slug, "gestalti")
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
     def test_slug_change(self):
@@ -259,6 +261,7 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertContains(response, "KonTiki")
 
         self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Race.objects.get().slug, "histalti")
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
     def test_name_too_long(self):
@@ -274,7 +277,9 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ensure this value has at most 15 characters")
         self.assertEqual(models.Race.objects.count(), 1)
-        self.assertEqual(models.Race.objects.get().name, "Gestalti")
+        race = models.Race.objects.get()
+        self.assertEqual(race.slug, "gestalti")
+        self.assertEqual(race.name, "Gestalti")
 
     def test_anonymous(self):
         self.client.logout()
@@ -317,7 +322,9 @@ class RaceUpdateViewTestCase(TestCase):
                                      'plural_name': 'Histalti'})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.Race.objects.count(), 1)
-        self.assertEqual(models.Race.objects.get().name, "Gestalti")
+        race = models.Race.objects.get()
+        self.assertEqual(race.slug, "gestalti")
+        self.assertEqual(race.name, "Gestalti")
 
     def test_race_does_not_exist(self):
         self.assertEqual(models.Race.objects.count(), 1)
@@ -354,7 +361,8 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.game.save()
         race = models.Race(game=self.game,
                            name='Gestalti',
-                           plural_name='Gestalti')
+                           plural_name='Gestalti',
+                           slug='gestalti')
         race.save()
         ambassador = models.Ambassador(race=race,
                                        user=self.user,

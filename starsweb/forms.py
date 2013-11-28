@@ -1,3 +1,4 @@
+from django.template.defaultfilters import slugify
 from django.conf import settings
 from django import forms
 
@@ -35,7 +36,21 @@ class RaceForm(forms.ModelForm):
                 "The race plural_name '{0}' is already being used for"
                 " this game.".format(plural_name))
 
+        max_length = self.instance._meta.get_field('slug').max_length
+        slug, num, end = slugify(plural_name), 1, ''
+        if len(slug) > max_length:
+            slug = slug[:max_length]
+
+        while game.races.exclude(pk=r_id
+                                 ).filter(slug=slug+end).exists():
+            num += 1
+            end = str(num)
+            if len(slug) + len(end) > max_length:
+                slug = slug[:max_length - len(end)]
+
+        self.instance.slug = slug + end
         return cleaned_data
+
 
 class AmbassadorForm(forms.ModelForm):
     class Meta:

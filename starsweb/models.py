@@ -83,21 +83,6 @@ class Race(models.Model):
         if self.ambassadors.exists():
             return u' / '.join(unicode(a) for a in self.ambassadors.all())
 
-    def save(self, *args, **kwargs):
-        max_length = self._meta.get_field('slug').max_length
-        slug, num, end = slugify(self.plural_name), 1, ''
-        if len(slug) > max_length:
-            slug = slug[:max_length]
-
-        while self.game.races.filter(slug=slug+end).exists():
-            num += 1
-            end = str(num)
-            if len(slug) + len(end) > max_length:
-                slug = slug[:max_length - len(end)]
-
-        self.slug = slug + end
-        super(Race, self).save(*args, **kwargs)
-
 
 class Ambassador(models.Model):
     race = models.ForeignKey(Race, related_name='ambassadors')

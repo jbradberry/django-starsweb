@@ -4,7 +4,7 @@ from django.test import TestCase
 from .. import models
 
 
-class GameModelTestCase(TestCase):
+class GameTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')
 
@@ -43,3 +43,42 @@ class GameModelTestCase(TestCase):
         self.assertEqual(g.state, 'S')
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html, "")
+
+
+class RaceTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.game = models.Game(name="",
+                                slug="",
+                                host=self.user,
+                                description="")
+        self.game.save()
+
+    def test_create_new_race(self):
+        race = models.Race(game=self.game,
+                           name="Gestalti",
+                           plural_name="Gestalti",
+                           slug="gestalti")
+        race.save()
+        self.assertEqual(race.name, "Gestalti")
+        self.assertEqual(race.plural_name, "Gestalti")
+        self.assertEqual(race.slug, "gestalti")
+        self.assertIsNone(race.player_number)
+
+    def test_alter_existing_race(self):
+        race = models.Race(game=self.game,
+                           name="Gestalti",
+                           plural_name="Gestalti",
+                           slug="gestalti")
+        race.save()
+        self.assertEqual(race.name, "Gestalti")
+        self.assertEqual(race.plural_name, "Gestalti")
+        self.assertEqual(race.slug, "gestalti")
+        self.assertIsNone(race.player_number)
+
+        race.player_number = 0
+        race.save()
+        self.assertEqual(race.name, "Gestalti")
+        self.assertEqual(race.plural_name, "Gestalti")
+        self.assertEqual(race.slug, "gestalti")
+        self.assertEqual(race.player_number, 0)
