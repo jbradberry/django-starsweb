@@ -83,6 +83,11 @@ class Race(models.Model):
         if self.ambassadors.exists():
             return u' / '.join(unicode(a) for a in self.ambassadors.all())
 
+    @property
+    def number(self):
+        if self.player_number is not None:
+            return self.player_number + 1
+
 
 class Ambassador(models.Model):
     race = models.ForeignKey(Race, related_name='ambassadors')

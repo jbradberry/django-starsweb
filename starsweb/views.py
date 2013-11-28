@@ -1,4 +1,5 @@
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
+                                  TemplateView)
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
 from django.core.exceptions import PermissionDenied
@@ -236,6 +237,38 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(AmbassadorUpdateView, self).dispatch(*args, **kwargs)
+
+
+class RaceDashboardView(ParentRaceMixin, TemplateView):
+    template_name = 'starsweb/race_dashboard.html'
+
+    def get_ambassador(self):
+        try:
+            return self.race.ambassadors.get(user=self.request.user)
+        except models.Ambassador.DoesNotExist:
+            raise PermissionDenied
+
+    def get_context_data(self, **kwargs):
+        context = {'game': self.game,
+                   'race': self.race,
+                   'ambassador': self.ambassador}
+        if self.game.state == 'S':
+            context.update(race_form=forms.RaceForm(instance=self.race))
+        if self.game.state != 'F':
+            context.update(
+                ambassador_form=forms.AmbassadorForm(instance=self.ambassador))
+        context.update(kwargs)
+        return super(RaceDashboardView, self).get_context_data(**context)
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        self.ambassador = self.get_ambassador()
+        return super(RaceDashboardView, self).get(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RaceDashboardView, self).dispatch(*args, **kwargs)
 
 
 class ScoreGraphView(DetailView):

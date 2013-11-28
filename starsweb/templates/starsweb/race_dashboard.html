@@ -1,0 +1,44 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}{{ race.name }} Dashboard | {{ game.name }} | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>{{ race.name }} Dashboard</h1>{% endblock %}
+
+{% block content %}
+
+<div class="row">
+<div class="panel panel-default">
+<div class="panel-heading"><span class="lead">Race</span></div>
+<div class="panel-body">
+{% if race_form %}
+<form method="POST" action="{% url 'race_update' game_slug=game.slug race_slug=race.slug %}">
+  {% csrf_token %}
+  {{ race_form.as_p }}
+  <input type="submit" value="Update Race" />
+</form>
+{% else %}
+<p><b>Name:</b> {{ race.name }}</p>
+<p><b>Plural Name:</b> {{ race.plural_name }}</p>
+{% endif %}
+<p><b>Player Number:</b> {{ race.number|default_if_none:"N/A" }}</p>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="panel panel-default">
+<div class="panel-heading"><span class="lead">Ambassador</span></div>
+<div class="panel-body">
+{% if ambassador_form %}
+<form method="POST" action="{% url 'ambassador_update' game_slug=game.slug race_slug=race.slug %}">
+  {% csrf_token %}
+  {{ ambassador_form.as_p }}
+  <input type="submit" value="Update Ambassador" />
+</form>
+{% else %}
+<p><b>Name:</b> {{ ambassador.name }}</p>
+{% endif %}
+</div>
+</div>
+</div>
+{% endblock %}

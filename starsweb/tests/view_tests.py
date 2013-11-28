@@ -472,3 +472,121 @@ class AmbassadorUpdateViewTestCase(TestCase):
                                      'race_slug': 'gestalti'})
         response = self.client.get(update_url)
         self.assertEqual(response.status_code, 404)
+
+
+class RaceDashboardViewTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.game = models.Game(
+            name="Total War in Ulfland",
+            slug="total-war-in-ulfland",
+            host=self.user,
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+        self.race = models.Race(game=self.game,
+                                name='Gestalti',
+                                plural_name='Gestalti',
+                                slug='gestalti')
+        self.race.save()
+        self.ambassador = models.Ambassador(race=self.race,
+                                            user=self.user,
+                                            name="KonTiki")
+        self.ambassador.save()
+
+    def test_setup_state(self):
+        self.assertEqual(self.game.state, 'S')
+
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'gestalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('race_form', response.context)
+        self.assertIn('ambassador_form', response.context)
+
+        self.assertContains(response, "<b>Player Number:</b> N/A")
+
+    def test_active_state(self):
+        self.game.state = 'A'
+        self.game.save()
+        self.race.player_number = 0
+        self.race.save()
+
+        self.assertEqual(self.game.state, 'A')
+
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'gestalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('race_form', response.context)
+        self.assertIn('ambassador_form', response.context)
+
+        self.assertContains(response, "<b>Player Number:</b> 1")
+
+    def test_paused_state(self):
+        self.game.state = 'P'
+        self.game.save()
+
+        self.assertEqual(self.game.state, 'P')
+
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'gestalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('race_form', response.context)
+        self.assertIn('ambassador_form', response.context)
+
+    def test_finished_state(self):
+        self.game.state = 'F'
+        self.game.save()
+
+        self.assertEqual(self.game.state, 'F')
+
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'gestalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('race_form', response.context)
+        self.assertNotIn('ambassador_form', response.context)
+
+    def test_game_does_not_exist(self):
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': '500-years-after',
+                                        'race_slug': 'gestalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_race_does_not_exist(self):
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'histalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_not_authorized(self):
+        self.user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'gestalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_anonymous(self):
+        self.client.logout()
+
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'gestalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   dashboard_url))
