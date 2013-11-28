@@ -264,6 +264,63 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.get().slug, "histalti")
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
+    def test_game_active(self):
+        self.game.state = 'A'
+        self.game.save()
+
+        update_url = reverse('race_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(update_url,
+                                    {'name': 'Histalti',
+                                     'plural_name': 'Histalti'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Race.objects.get().slug, "gestalti")
+
+    def test_game_paused(self):
+        self.game.state = 'P'
+        self.game.save()
+
+        update_url = reverse('race_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(update_url,
+                                    {'name': 'Histalti',
+                                     'plural_name': 'Histalti'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Race.objects.get().slug, "gestalti")
+
+    def test_game_finished(self):
+        self.game.state = 'F'
+        self.game.save()
+
+        update_url = reverse('race_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(update_url,
+                                    {'name': 'Histalti',
+                                     'plural_name': 'Histalti'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Race.objects.get().slug, "gestalti")
+
     def test_name_too_long(self):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)

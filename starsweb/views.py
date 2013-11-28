@@ -197,10 +197,14 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
+        if self.game.state != 'S':
+            return HttpResponseForbidden("Game is no longer in setup.")
         return super(RaceUpdateView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
+        if self.game.state != 'S':
+            return HttpResponseForbidden("Game is no longer in setup.")
         return super(RaceUpdateView, self).post(request, *args, **kwargs)
 
     @method_decorator(login_required)
