@@ -26,7 +26,7 @@
       <td>{{ current|default_if_none:"2400" }}</td>
       <td>{% if current %}{{ current.generated|date:"D, j M Y g:ia T" }}{% else %}{{ game.created|date:"D, j M Y g:ia T" }}{% endif %}</td>
       {% endwith %}
-      <td>{{ game.state }}</td>
+      <td>{{ game.get_state_display }}</td>
     </tr>
     {% endfor %}
   </table>
