@@ -398,6 +398,27 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
+    def test_game_finished(self):
+        self.game.state = 'F'
+        self.game.save()
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(update_url,
+                                    {'name': 'Kon-Tiki'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Race.objects.get().name, "Gestalti")
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
     def test_name_too_long(self):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)

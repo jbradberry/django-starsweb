@@ -226,11 +226,15 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
+        if self.game.state == 'F':
+            return HttpResponseForbidden("Game has concluded.")
         self.race = self.get_race()
         return super(AmbassadorUpdateView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
+        if self.game.state == 'F':
+            return HttpResponseForbidden("Game has concluded.")
         self.race = self.get_race()
         return super(AmbassadorUpdateView, self).post(request, *args, **kwargs)
 
