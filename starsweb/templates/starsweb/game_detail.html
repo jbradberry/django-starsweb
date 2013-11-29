@@ -23,7 +23,7 @@
 	<tr>
         <th>Name</th>
         <th>Race</th>
-        <th>Score</th>
+        <th><a href="{% url 'score_graph' slug=game.slug %}">Score</a></th>
 	</tr>
     </thead>
     {% for race, score in races %}
