@@ -285,11 +285,24 @@ class ScoreGraphView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = {}
-        section_name = self.request.GET.get('section')
-        if section_name:
+
+        score_types = ('rank', 'score', 'resources', 'techlevels', 'capships',
+                       'escortships', 'unarmedships', 'starbases', 'planets')
+
+        section_name = self.request.GET.get('section', 'score').lower()
+        if section_name and section_name in score_types:
             section = getattr(models.Score, section_name.upper(), None)
+            context['section_name'] = section_name
         else:
             section = models.Score.SCORE
+            context['section_name'] = 'score'
+
+        score_names = dict(models.Score.SECTIONS)
+        sections = tuple(
+            (stype, score_names[getattr(models.Score, stype.upper())])
+            for stype in score_types
+        )
+        context['sections'] = sections
 
         scores = models.Score.objects.select_related(
             'turn', 'race'
@@ -305,7 +318,7 @@ class ScoreGraphView(DetailView):
                                          'race': score['race__plural_name'],
                                          'value': score['value']}
                                          for score in scores])
-        context['scoretype'] = dict(models.Score.SECTIONS).get(section, '')
+        context['scorename'] = score_names.get(section, '')
         context.update(kwargs)
         return super(ScoreGraphView, self).get_context_data(**context)
 
