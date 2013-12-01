@@ -16,6 +16,29 @@ class RaceForm(forms.ModelForm):
         model = models.Race
         fields = ('name', 'plural_name')
 
+    def clean_name(self):
+        name = self.cleaned_data.get('name', '')
+
+        try:
+            name.encode('cp1252')
+        except UnicodeEncodeError:
+            raise forms.ValidationError(
+                "Race name is restricted to the cp1252/latin1 character set.")
+
+        return name
+
+    def clean_plural_name(self):
+        plural_name = self.cleaned_data.get('plural_name', '')
+
+        try:
+            plural_name.encode('cp1252')
+        except UnicodeEncodeError:
+            raise forms.ValidationError(
+                "Race plural name is restricted to the"
+                " cp1252/latin1 character set.")
+
+        return plural_name
+
     def clean(self):
         cleaned_data = super(RaceForm, self).clean()
         game = self.instance.game

@@ -338,6 +338,25 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(race.slug, "gestalti")
         self.assertEqual(race.name, "Gestalti")
 
+    def test_name_not_cp1252(self):
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('race_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.post(update_url,
+                                    {'name': u'\u2603',
+                                     'plural_name': 'Gestalti'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,
+                            "Race name is restricted to the cp1252/latin1"
+                            " character set.")
+        self.assertEqual(models.Race.objects.count(), 1)
+        race = models.Race.objects.get()
+        self.assertEqual(race.slug, "gestalti")
+        self.assertEqual(race.name, "Gestalti")
+
     def test_anonymous(self):
         self.client.logout()
         self.assertEqual(models.Race.objects.count(), 1)
