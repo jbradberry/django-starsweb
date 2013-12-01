@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import models
 from operator import attrgetter
+import uuid
 
 from . import markup
 
@@ -57,13 +58,26 @@ class Game(models.Model):
             return self.turns.latest()
 
 
+def racefile_path(instance, filename):
+    return 'race/{user}/{uuid}.r1'.format(user=instance.user_id,
+                                          uuid=uuid.uuid4())
+
+
+class RaceFile(models.Model):
+    user = models.ForeignKey('auth.User', related_name='racefiles')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=15)
+    plural_name = models.CharField(max_length=15)
+    file = models.FileField(upload_to=racefile_path)
+
+
 class Race(models.Model):
     game = models.ForeignKey(Game, related_name='races')
     name = models.CharField(max_length=15)
     plural_name = models.CharField(max_length=15)
     slug = models.SlugField(max_length=16)
     player_number = models.PositiveSmallIntegerField(null=True, blank=True)
-    # optional race file
+    racefile = models.ForeignKey(RaceFile, null=True)
 
     class Meta:
         unique_together = (('game', 'slug'),
@@ -97,6 +111,11 @@ class Ambassador(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+class GameRaceFile(models.Model):
+    race = models.ForeignKey(Race, unique=True)
+    racefile = models.ForeignKey(RaceFile)
 
 
 class Turn(models.Model):
