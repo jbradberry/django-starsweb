@@ -109,6 +109,9 @@ class Ambassador(models.Model):
     name = models.CharField(max_length=128)
     active = models.BooleanField(default=True)
 
+    class Meta:
+        unique_together = ('race', 'user')
+
     def __unicode__(self):
         return self.name
 
