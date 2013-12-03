@@ -58,17 +58,29 @@ class Game(models.Model):
             return self.turns.latest()
 
 
-def racefile_path(instance, filename):
-    return 'race/{user}/{uuid}.r1'.format(user=instance.user_id,
-                                          uuid=uuid.uuid4())
+def starsfile_path(instance, filename):
+    return '{type}/{year}/{month}/{day}/{uuid}'.format(
+        type=instance.get_type_display(),
+        year=instance.timestamp.year,
+        month=instance.timestamp.month,
+        day=instance.timestamp.day,
+        uuid=uuid.uuid4()
+    )
 
 
-class RaceFile(models.Model):
-    user = models.ForeignKey('auth.User', related_name='racefiles')
+class StarsFile(models.Model):
+    STARS_TYPES = (('r', 'race'),
+                   ('xy', 'map'),
+                   ('m', 'state'),
+                   ('x', 'orders'),
+                   ('h', 'history'),
+                   ('hst', 'host'))
+
+    upload_user = models.ForeignKey('auth.User', null=True,
+                                    related_name='starsfiles')
     timestamp = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=15)
-    plural_name = models.CharField(max_length=15)
-    file = models.FileField(upload_to=racefile_path)
+    type = models.CharField(max_length=3, choices=STARS_TYPES)
+    file = models.FileField(upload_to=starsfile_path)
 
 
 class Race(models.Model):
@@ -77,7 +89,7 @@ class Race(models.Model):
     plural_name = models.CharField(max_length=15)
     slug = models.SlugField(max_length=16)
     player_number = models.PositiveSmallIntegerField(null=True, blank=True)
-    racefile = models.ForeignKey(RaceFile, null=True)
+    racefile = models.ForeignKey(StarsFile, null=True)
 
     class Meta:
         unique_together = (('game', 'slug'),
@@ -103,6 +115,20 @@ class Race(models.Model):
             return self.player_number + 1
 
 
+class UserRaceFile(models.Model):
+    user = models.ForeignKey('auth.User')
+    identifier = models.CharField(max_length=64)
+    racefile = models.ForeignKey(StarsFile)
+
+    class Meta:
+        unique_together = ('user', 'identifier')
+
+
+class GameRaceFile(models.Model):
+    race = models.ForeignKey(Race, unique=True)
+    racefile = models.ForeignKey(StarsFile)
+
+
 class Ambassador(models.Model):
     race = models.ForeignKey(Race, related_name='ambassadors')
     user = models.ForeignKey("auth.User")
@@ -114,11 +140,6 @@ class Ambassador(models.Model):
 
     def __unicode__(self):
         return self.name
-
-
-class GameRaceFile(models.Model):
-    race = models.ForeignKey(Race, unique=True)
-    racefile = models.ForeignKey(RaceFile)
 
 
 class Turn(models.Model):
