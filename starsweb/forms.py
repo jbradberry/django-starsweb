@@ -2,6 +2,8 @@ from django.template.defaultfilters import slugify
 from django.conf import settings
 from django import forms
 
+from starslib import base
+
 from . import models
 
 
@@ -79,3 +81,28 @@ class AmbassadorForm(forms.ModelForm):
     class Meta:
         model = models.Ambassador
         exclude = ('race', 'user', 'active')
+
+
+class RaceFileForm(forms.ModelForm):
+    class Meta:
+        model = models.StarsFile
+        fields = ('file',)
+
+    def clean_file(self):
+        f = self.cleaned_data.get('file')
+
+        valid = True
+        try:
+            stars_file = base.StarsFile()
+            stars_file.bytes = f.read()
+            if stars_file.type != 'r':
+                valid = False
+            elif stars_file.counts != {8: 1, 6: 1, 0: 1}:
+                valid = False
+        except base.StarsError:
+            valid = False
+
+        if not valid:
+            raise forms.ValidationError("Not a valid Stars race file.")
+
+        return f

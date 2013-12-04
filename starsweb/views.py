@@ -3,6 +3,7 @@ from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
 from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse_lazy
 from django.http import Http404, HttpResponseForbidden
 from django.db.models import Max
 import json
@@ -103,6 +104,7 @@ class ParentRaceMixin(ParentGameMixin):
 
     def get_race(self):
         race_queryset = self.game.races.all()
+
         pk = self.kwargs.get(self.pk_race_kwarg, None)
         slug = self.kwargs.get(self.slug_race_kwarg, None)
         if pk is not None:
@@ -330,3 +332,17 @@ class RaceDetailView(DetailView):
         queryset = super(RaceDetailView, self).get_queryset()
 
         return queryset.filter(game__slug=self.kwargs.get('game_slug'))
+
+
+class RaceFileUpload(CreateView):
+    form_class = forms.RaceFileForm
+    template_name = 'starsweb/racefile_upload.html'
+    success_url = reverse_lazy('game_list')
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RaceFileUpload, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super(RaceFileUpload, self).form_valid(form)
