@@ -5,7 +5,7 @@
 {% block header %}<h1>Race File Upload</h1>{% endblock %}
 
 {% block content %}
-<form enctype="multipart/form-data" method="POST" action="">{% csrf_token %}
+<form enctype="multipart/form-data" method="post" action="">{% csrf_token %}
   {{ form.as_p }}
 <input type="submit" value="Upload" />
 </form>

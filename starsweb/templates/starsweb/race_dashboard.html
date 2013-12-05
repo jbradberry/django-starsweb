@@ -11,7 +11,7 @@
 <div class="panel-heading"><span class="lead">Race</span></div>
 <div class="panel-body">
 {% if race_form %}
-<form method="POST" action="{% url 'race_update' game_slug=game.slug race_slug=race.slug %}">
+<form method="post" action="{% url 'race_update' game_slug=game.slug race_slug=race.slug %}">
   {% csrf_token %}
   {{ race_form.as_p }}
   <input type="submit" value="Update Race" />
@@ -30,7 +30,7 @@
 <div class="panel-heading"><span class="lead">Ambassador</span></div>
 <div class="panel-body">
 {% if ambassador_form %}
-<form method="POST" action="{% url 'ambassador_update' game_slug=game.slug race_slug=race.slug %}">
+<form method="post" action="{% url 'ambassador_update' game_slug=game.slug race_slug=race.slug %}">
   {% csrf_token %}
   {{ ambassador_form.as_p }}
   <input type="submit" value="Update Ambassador" />
@@ -47,7 +47,7 @@
 <div class="panel-heading"><span class="lead">Race File</span></div>
 <div class="panel-body">
 {% if raceupload_form %}
-<form enctype="multipart/form-data" method="POST" action="{% url 'race_upload' game_slug=game.slug race_slug=race.slug %}">
+<form enctype="multipart/form-data" method="post" action="{% url 'race_upload' game_slug=game.slug race_slug=race.slug %}">
   {% csrf_token %}
   {{ raceupload_form.as_p }}
   <input type="submit" value="Upload Race" />
