@@ -5,6 +5,8 @@ from django.utils.decorators import method_decorator
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse_lazy
 from django.http import Http404, HttpResponseForbidden
+from django.core.files.base import ContentFile
+from django.contrib import messages
 from django.db.models import Max
 import json
 
@@ -345,4 +347,46 @@ class RaceFileUpload(CreateView):
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+
+        race_struct = form.stars_file.structs[1]
+        name = race_struct.race_name
+        plural_name = race_struct.plural_race_name
+        altered = False
+
+        if name.strip() != name or plural_name.strip() != plural_name:
+            messages.warning(
+                self.request,
+                "The uploaded race file's name or plural name had extra"
+                " whitespace before or after the name. The file has been"
+                " edited to fix this.")
+
+            altered = True
+            name = name.strip()
+            plural_name = plural_name.strip()
+
+        if name.lower().startswith("the "):
+            messages.warning(
+                self.request,
+                "The uploaded race file's name or plural name had the word"
+                " 'The' before it. The file has been edited to fix this.")
+
+            altered = True
+            name = name[4:].strip()
+
+        if plural_name.lower().startswith("the "):
+            messages.warning(
+                self.request,
+                "The uploaded race file's name or plural name had the word"
+                " 'The' before it. The file has been edited to fix this.")
+
+            altered = True
+            plural_name = plural_name[4:].strip()
+
+        if altered:
+            race_struct.race_name = name
+            race_struct.plural_race_name = plural_name
+
+            content = ContentFile(form.stars_file.bytes)
+            form.instance.file.file = content
+
         return super(RaceFileUpload, self).form_valid(form)

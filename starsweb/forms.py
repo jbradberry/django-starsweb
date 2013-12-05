@@ -88,40 +88,22 @@ class RaceFileForm(forms.ModelForm):
         model = models.StarsFile
         fields = ('file',)
 
-    def __init__(self, *args, **kwargs):
-        super(RaceFileForm, self).__init__(*args, **kwargs)
-        self.warnings = set()
-
     def clean_file(self):
         f = self.cleaned_data.get('file')
 
         valid = True
         try:
-            stars_file = base.StarsFile()
-            stars_file.bytes = f.read()
-            if stars_file.type != 'r':
+            self.stars_file = base.StarsFile()
+            self.stars_file.bytes = f.read()
+            if self.stars_file.type != 'r':
                 valid = False
-            elif stars_file.counts != {8: 1, 6: 1, 0: 1}:
+            elif self.stars_file.counts != {8: 1, 6: 1, 0: 1}:
                 valid = False
         except base.StarsError:
             valid = False
 
         if valid:
             self.instance.type = 'r'
-
-            race_struct = stars_file.structs[1]
-            name = race_struct.race_name
-            plural_name = race_struct.plural_race_name
-
-            if name.strip() != name or plural_name.strip() != plural_name:
-                self.warnings.add('extra-whitespace')
-                name = name.strip()
-                plural_name = plural_name.strip()
-
-            name_bad = name.lower().startswith("the ")
-            pname_bad = plural_name.lower().startswith("the ")
-            if name_bad or pname_bad:
-                self.warnings.add('prepended-the')
         else:
             raise forms.ValidationError("Not a valid Stars race file.")
 
