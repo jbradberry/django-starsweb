@@ -395,7 +395,7 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(RaceFileUpload, self).dispatch(*args, **kwargs)
+        return super(BoundRaceFileUpload, self).dispatch(*args, **kwargs)
 
     def get_success_url(self):
         return self.game.get_absolute_url()
@@ -417,13 +417,13 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
             altered = True
 
         if altered:
-            race_struct.race_name = name
-            race_struct.plural_race_name = plural_name
+            race_struct.race_name = self.race.name
+            race_struct.plural_race_name = self.race.plural_name
 
             content = ContentFile(form.stars_file.bytes)
             form.instance.file.file = content
 
-        response = super(RaceFileUpload, self).form_valid(form)
+        response = super(BoundRaceFileUpload, self).form_valid(form)
         self.race.racefile = self.object
         self.race.save()
         return response
@@ -431,7 +431,7 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
         self.race = self.get_race()
-        if not self.race.ambassadors(user=self.request.user).exists():
+        if not self.race.ambassadors.filter(user=self.request.user).exists():
             return HttpResponseForbidden(
                 "Not authorized to upload files for this race.")
         if self.game.state != 'S':
@@ -441,7 +441,7 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
         self.race = self.get_race()
-        if not self.race.ambassadors(user=self.request.user).exists():
+        if not self.race.ambassadors.filter(user=self.request.user).exists():
             return HttpResponseForbidden(
                 "Not authorized to upload files for this race.")
         if self.game.state != 'S':
