@@ -364,23 +364,20 @@ class RaceFileUpload(CreateView):
             name = name.strip()
             plural_name = plural_name.strip()
 
+        prepended_the = False
         if name.lower().startswith("the "):
-            messages.warning(
-                self.request,
-                "The uploaded race file's name or plural name had the word"
-                " 'The' before it. The file has been edited to fix this.")
-
-            altered = True
+            altered, prepended_the = True, True
             name = name[4:].strip()
 
         if plural_name.lower().startswith("the "):
+            altered, prepended_the = True, True
+            plural_name = plural_name[4:].strip()
+
+        if prepended_the:
             messages.warning(
                 self.request,
                 "The uploaded race file's name or plural name had the word"
                 " 'The' before it. The file has been edited to fix this.")
-
-            altered = True
-            plural_name = plural_name[4:].strip()
 
         if altered:
             race_struct.race_name = name
