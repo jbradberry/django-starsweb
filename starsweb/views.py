@@ -265,7 +265,8 @@ class RaceDashboardView(ParentRaceMixin, TemplateView):
                    'race': self.race,
                    'ambassador': self.ambassador}
         if self.game.state == 'S':
-            context.update(race_form=forms.RaceForm(instance=self.race))
+            context.update(race_form=forms.RaceForm(instance=self.race),
+                           raceupload_form=forms.RaceFileForm())
         if self.game.state != 'F':
             context.update(
                 ambassador_form=forms.AmbassadorForm(instance=self.ambassador))

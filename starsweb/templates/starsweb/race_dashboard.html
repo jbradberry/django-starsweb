@@ -41,4 +41,19 @@
 </div>
 </div>
 </div>
+
+<div class="row">
+<div class="panel panel-default">
+<div class="panel-heading"><span class="lead">Race File</span></div>
+<div class="panel-body">
+{% if raceupload_form %}
+<form enctype="multipart/form-data" method="POST" action="{% url 'race_upload' game_slug=game.slug race_slug=race.slug %}">
+  {% csrf_token %}
+  {{ raceupload_form.as_p }}
+  <input type="submit" value="Upload Race" />
+</form>
+{% endif %}
+</div>
+</div>
+</div>
 {% endblock %}
