@@ -390,3 +390,63 @@ class RaceFileUpload(CreateView):
             form.instance.file.file = content
 
         return super(RaceFileUpload, self).form_valid(form)
+
+
+class BoundRaceFileUpload(ParentRaceMixin, CreateView):
+    form_class = forms.RaceFileForm
+    template_name = 'starsweb/racefile_upload.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RaceFileUpload, self).dispatch(*args, **kwargs)
+
+    def get_success_url(self):
+        return self.game.get_absolute_url()
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+
+        race_struct = form.stars_file.structs[1]
+        name = race_struct.race_name
+        plural_name = race_struct.plural_race_name
+        altered = False
+
+        if name != self.race.name or plural_name != self.race.plural_name:
+            messages.info(
+                self.request,
+                "The uploaded race file's name or plural name has been"
+                " adjusted to match your race's name and plural name.")
+
+            altered = True
+
+        if altered:
+            race_struct.race_name = name
+            race_struct.plural_race_name = plural_name
+
+            content = ContentFile(form.stars_file.bytes)
+            form.instance.file.file = content
+
+        response = super(RaceFileUpload, self).form_valid(form)
+        self.race.racefile = self.object
+        self.race.save()
+        return response
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors(user=self.request.user).exists():
+            return HttpResponseForbidden(
+                "Not authorized to upload files for this race.")
+        if self.game.state != 'S':
+            return HttpResponseForbidden("Game is no longer in setup.")
+        return super(BoundRaceFileUpload, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors(user=self.request.user).exists():
+            return HttpResponseForbidden(
+                "Not authorized to upload files for this race.")
+        if self.game.state != 'S':
+            return HttpResponseForbidden("Game is no longer in setup.")
+        return super(BoundRaceFileUpload, self).post(request, *args, **kwargs)
