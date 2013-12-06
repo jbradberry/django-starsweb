@@ -46,6 +46,14 @@
 <div class="panel panel-default">
 <div class="panel-heading"><span class="lead">Race File</span></div>
 <div class="panel-body">
+<p>
+<b>Current File:</b>
+{% if race.racefile %}
+<a href="{% url 'race_download' game_slug=game.slug race_slug=race.slug %}">{{ race.slug }}.r1</a>
+{% else %}
+N/A
+{% endif %}
+</p>
 {% if raceupload_form %}
 <form enctype="multipart/form-data" method="post" action="{% url 'race_upload' game_slug=game.slug race_slug=race.slug %}">
   {% csrf_token %}
