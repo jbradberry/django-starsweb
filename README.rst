@@ -11,10 +11,12 @@ Requirements
 ------------
 - Python >= 2.6
 - Django >= 1.4
+- django-sendfile_
 - django-template-utils_
 - lxml
 - starslib (not yet released)
 
+.. _django-sendfile: https://github.com/johnsensible/django-sendfile
 .. _django-template-utils: https://bitbucket.org/ubernostrum/django-template-utils
 
 Recommended

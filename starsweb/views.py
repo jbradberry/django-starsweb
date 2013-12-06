@@ -1,5 +1,5 @@
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
-                                  TemplateView)
+                                  TemplateView, View)
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
 from django.core.exceptions import PermissionDenied
@@ -8,6 +8,8 @@ from django.http import Http404, HttpResponseForbidden
 from django.core.files.base import ContentFile
 from django.contrib import messages
 from django.db.models import Max
+
+from sendfile import sendfile
 import json
 
 from . import models
@@ -456,3 +458,21 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
         if self.game.state != 'S':
             return HttpResponseForbidden("Game is no longer in setup.")
         return super(BoundRaceFileUpload, self).post(request, *args, **kwargs)
+
+
+class BoundRaceFileDownload(ParentRaceMixin, View):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(BoundRaceFileDownload, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user).exists():
+            return HttpResponseForbidden(
+                "Not authorized to download files for this race.")
+        if self.race.racefile is None:
+            raise Http404("No race file available.")
+        return sendfile(
+            self.request, self.race.racefile.file.path, attachment=True,
+            attachment_filename='{name}.r1'.format(name=self.race.slug))
