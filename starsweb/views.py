@@ -387,6 +387,10 @@ class RaceFileUpload(CreateView):
             content = ContentFile(form.stars_file.bytes)
             form.instance.file.file = content
 
+        messages.success(
+            self.request,
+            "The race file has successfully been uploaded."
+        )
         return super(RaceFileUpload, self).form_valid(form)
 
 
@@ -427,6 +431,10 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
         response = super(BoundRaceFileUpload, self).form_valid(form)
         self.race.racefile = self.object
         self.race.save()
+        messages.success(
+            self.request,
+            "The race file has successfully been uploaded."
+        )
         return response
 
     def get(self, request, *args, **kwargs):
