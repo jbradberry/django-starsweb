@@ -99,7 +99,7 @@ class RaceFileForm(forms.ModelForm):
                 valid = False
             elif self.stars_file.counts != {8: 1, 6: 1, 0: 1}:
                 valid = False
-        except base.StarsError:
+        except (base.StarsError, Exception):
             valid = False
 
         if valid:
