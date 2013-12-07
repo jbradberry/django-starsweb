@@ -606,6 +606,7 @@ class RaceDashboardViewTestCase(TestCase):
         response = self.client.get(dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertIn('race_form', response.context)
+        self.assertIn('raceupload_form', response.context)
         self.assertIn('ambassador_form', response.context)
 
         self.assertContains(response, "<b>Player Number:</b> N/A")
@@ -624,6 +625,7 @@ class RaceDashboardViewTestCase(TestCase):
         response = self.client.get(dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('race_form', response.context)
+        self.assertNotIn('raceupload_form', response.context)
         self.assertIn('ambassador_form', response.context)
 
         self.assertContains(response, "<b>Player Number:</b> 1")
@@ -640,6 +642,7 @@ class RaceDashboardViewTestCase(TestCase):
         response = self.client.get(dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('race_form', response.context)
+        self.assertNotIn('raceupload_form', response.context)
         self.assertIn('ambassador_form', response.context)
 
     def test_finished_state(self):
@@ -654,6 +657,7 @@ class RaceDashboardViewTestCase(TestCase):
         response = self.client.get(dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('race_form', response.context)
+        self.assertNotIn('raceupload_form', response.context)
         self.assertNotIn('ambassador_form', response.context)
 
     def test_game_does_not_exist(self):
