@@ -330,15 +330,6 @@ class ScoreGraphView(DetailView):
         return super(ScoreGraphView, self).get_context_data(**context)
 
 
-class RaceDetailView(DetailView):
-    model = models.Race
-
-    def get_queryset(self):
-        queryset = super(RaceDetailView, self).get_queryset()
-
-        return queryset.filter(game__slug=self.kwargs.get('game_slug'))
-
-
 class RaceFileUpload(CreateView):
     form_class = forms.RaceFileForm
     template_name = 'starsweb/racefile_upload.html'
