@@ -10,6 +10,172 @@ from .. import models
 PATH = os.path.dirname(__file__)
 
 
+class GameDetailViewTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.game = models.Game(
+            name="Total War in Ulfland",
+            slug="total-war-in-ulfland",
+            host=self.user,
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+        self.race1 = models.Race(game=self.game,
+                                 name='Gestalti',
+                                 plural_name='Gestalti',
+                                 slug='gestalti')
+        self.race1.save()
+        self.race2 = models.Race(game=self.game,
+                                 name='Phizz',
+                                 plural_name='Phizz',
+                                 slug='phizz')
+        self.race2.save()
+        self.race3 = models.Race(game=self.game,
+                                 name='SSG',
+                                 plural_name='SSG',
+                                 slug='ssg')
+        self.race3.save()
+
+        self.detail_url = reverse('game_detail',
+                                  kwargs={'slug': self.game.slug})
+
+    def test_no_scores(self):
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, "Total War in Ulfland")
+        self.assertContains(response, "This <em>game</em> is foobared.")
+        self.assertContains(response, "The Gestalti")
+        self.assertContains(response, "The Phizz")
+        self.assertContains(response, "The SSG")
+        self.assertIn('races', response.context)
+
+        races = zip(*response.context['races'])
+        self.assertEqual(races[0], (self.race1, self.race2, self.race3))
+        self.assertEqual(races[1], (None, None, None))
+
+    def test_player_numbers_but_no_scores(self):
+        self.race1.player_number = 1
+        self.race1.save()
+        self.race2.player_number = 0
+        self.race2.save()
+        self.race3.player_number = 2
+        self.race3.save()
+
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, "The Gestalti")
+        self.assertContains(response, "The Phizz")
+        self.assertContains(response, "The SSG")
+
+        races = zip(*response.context['races'])
+        self.assertEqual(races[0], (self.race2, self.race1, self.race3))
+        self.assertEqual(races[1], (None, None, None))
+
+    def test_all_with_scores(self):
+        self.race1.player_number = 1
+        self.race1.save()
+        self.race2.player_number = 0
+        self.race2.save()
+        self.race3.player_number = 2
+        self.race3.save()
+        self.game.state = 'A'
+        self.game.save()
+        turn = self.game.turns.create(year=2401)
+        turn.scores.create(race=self.race1, section=models.Score.SCORE,
+                           value=247)
+        turn.scores.create(race=self.race2, section=models.Score.SCORE,
+                           value=430)
+        turn.scores.create(race=self.race3, section=models.Score.SCORE,
+                           value=576)
+
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, "Year 2401")
+        self.assertContains(response, "The Gestalti")
+        self.assertContains(response, "The Phizz")
+        self.assertContains(response, "The SSG")
+
+        races = zip(*response.context['races'])
+        self.assertEqual(races[0], (self.race3, self.race2, self.race1))
+        self.assertEqual(races[1], (576, 430, 247))
+
+        self.assertContains(response, "<td>576</td>")
+        self.assertContains(response, "<td>430</td>")
+        self.assertContains(response, "<td>247</td>")
+
+    def test_with_dead_race(self):
+        self.race1.player_number = 1
+        self.race1.save()
+        self.race2.player_number = 0
+        self.race2.save()
+        self.race3.player_number = 2
+        self.race3.save()
+        self.game.state = 'A'
+        self.game.save()
+        turn = self.game.turns.create(year=2401)
+        turn.scores.create(race=self.race1, section=models.Score.SCORE,
+                           value=5097)
+        turn.scores.create(race=self.race2, section=models.Score.SCORE,
+                           value=6702)
+        turn.scores.create(race=self.race3, section=models.Score.SCORE,
+                           value=0)
+
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, "Year 2401")
+        self.assertContains(response, "The Gestalti")
+        self.assertContains(response, "The Phizz")
+        self.assertContains(response, "The SSG")
+
+        races = zip(*response.context['races'])
+        self.assertEqual(races[0], (self.race2, self.race1, self.race3))
+        self.assertEqual(races[1], (6702, 5097, 0))
+
+        self.assertContains(response, "<td>6702</td>")
+        self.assertContains(response, "<td>5097</td>")
+        self.assertContains(response, "<td>0</td>")
+
+    def test_with_multiple_turns(self):
+        self.race1.player_number = 1
+        self.race1.save()
+        self.race2.player_number = 0
+        self.race2.save()
+        self.race3.player_number = 2
+        self.race3.save()
+        self.game.state = 'A'
+        self.game.save()
+        turn = self.game.turns.create(year=2401)
+        turn.scores.create(race=self.race1, section=models.Score.SCORE,
+                           value=247)
+        turn.scores.create(race=self.race2, section=models.Score.SCORE,
+                           value=430)
+        turn.scores.create(race=self.race3, section=models.Score.SCORE,
+                           value=576)
+
+        turn = self.game.turns.create(year=2402)
+        turn.scores.create(race=self.race1, section=models.Score.SCORE,
+                           value=5097)
+        turn.scores.create(race=self.race2, section=models.Score.SCORE,
+                           value=6702)
+        turn.scores.create(race=self.race3, section=models.Score.SCORE,
+                           value=3592)
+
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, "Year 2402")
+        self.assertContains(response, "The Gestalti")
+        self.assertContains(response, "The Phizz")
+        self.assertContains(response, "The SSG")
+
+        races = zip(*response.context['races'])
+        self.assertEqual(races[0], (self.race2, self.race1, self.race3))
+        self.assertEqual(races[1], (6702, 5097, 3592))
+
+        self.assertContains(response, "<td>6702</td>")
+        self.assertContains(response, "<td>5097</td>")
+        self.assertContains(response, "<td>3592</td>")
+        self.assertNotContains(response, "<td>576</td>")
+        self.assertNotContains(response, "<td>430</td>")
+        self.assertNotContains(response, "<td>247</td>")
+
+
 class GameCreateViewTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')
