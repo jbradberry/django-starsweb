@@ -25,9 +25,9 @@ urlpatterns = patterns('',
     url(r'^game/(?P<game_slug>[-\w]+)/manage/(?P<race_slug>[-\w]+)/ambassador/$',
         views.AmbassadorUpdateView.as_view(), name='ambassador_update'),
     url(r'^game/(?P<game_slug>[-\w]+)/manage/(?P<race_slug>[-\w]+)/upload/$',
-        views.BoundRaceFileUpload.as_view(), name='race_upload'),
+        views.RaceFileUpload.as_view(), name='race_upload'),
     url(r'^game/(?P<game_slug>[-\w]+)/manage/(?P<race_slug>[-\w]+)/download/$',
-        views.BoundRaceFileDownload.as_view(), name='race_download'),
+        views.RaceFileDownload.as_view(), name='race_download'),
     url(r'^create/$', views.GameCreateView.as_view(), name='create_game'),
 )
 

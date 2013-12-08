@@ -863,7 +863,7 @@ class RaceDashboardViewTestCase(TestCase):
                                                    dashboard_url))
 
 
-class BoundRaceFileUploadTestCase(TestCase):
+class RaceFileUploadTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')
         self.client.login(username='admin', password='password')

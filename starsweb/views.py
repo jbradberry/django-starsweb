@@ -432,13 +432,13 @@ class UserRaceUpload(UserRaceMixin, CreateView):
         return super(UserRaceUpload, self).form_valid(form)
 
 
-class BoundRaceFileUpload(ParentRaceMixin, CreateView):
+class RaceFileUpload(ParentRaceMixin, CreateView):
     form_class = forms.RaceFileForm
     template_name = 'starsweb/racefile_upload.html'
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(BoundRaceFileUpload, self).dispatch(*args, **kwargs)
+        return super(RaceFileUpload, self).dispatch(*args, **kwargs)
 
     def get_success_url(self):
         return self.game.get_absolute_url()
@@ -466,7 +466,7 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
             content = ContentFile(form.stars_file.bytes)
             form.instance.file.file = content
 
-        response = super(BoundRaceFileUpload, self).form_valid(form)
+        response = super(RaceFileUpload, self).form_valid(form)
         self.race.racefile = self.object
         self.race.save()
         messages.success(
@@ -483,7 +483,7 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
                 "Not authorized to upload files for this race.")
         if self.game.state != 'S':
             return HttpResponseForbidden("Game is no longer in setup.")
-        return super(BoundRaceFileUpload, self).get(request, *args, **kwargs)
+        return super(RaceFileUpload, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
@@ -493,13 +493,13 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
                 "Not authorized to upload files for this race.")
         if self.game.state != 'S':
             return HttpResponseForbidden("Game is no longer in setup.")
-        return super(BoundRaceFileUpload, self).post(request, *args, **kwargs)
+        return super(RaceFileUpload, self).post(request, *args, **kwargs)
 
 
-class BoundRaceFileDownload(ParentRaceMixin, View):
+class RaceFileDownload(ParentRaceMixin, View):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(BoundRaceFileDownload, self).dispatch(*args, **kwargs)
+        return super(RaceFileDownload, self).dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
