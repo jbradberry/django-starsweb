@@ -9,6 +9,8 @@ from . import views
 urlpatterns = patterns('',
     url(r'^$', RedirectView.as_view(url=reverse_lazy('game_list'),
                                     permanent=False)),
+    url(r'^user/racefile/(?P<pk>\d+)/$', views.UserRaceFileDownload.as_view(),
+        name='userrace_download'),
     url(r'^game/$', views.GameListView.as_view(), name='game_list'),
     url(r'^game/(?P<slug>[-\w]+)/$', views.GameDetailView.as_view(),
         name='game_detail'),

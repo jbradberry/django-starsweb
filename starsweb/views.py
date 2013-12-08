@@ -1,7 +1,9 @@
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   TemplateView, View)
+from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
+from django.template.defaultfilters import slugify
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse_lazy
 from django.http import Http404, HttpResponseForbidden
@@ -328,6 +330,25 @@ class ScoreGraphView(DetailView):
         context['scorename'] = score_names.get(section, '')
         context.update(kwargs)
         return super(ScoreGraphView, self).get_context_data(**context)
+
+
+class UserRaceFileDownload(SingleObjectMixin, View):
+    model = models.UserRaceFile
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(UserRaceFileDownload, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.user != self.request.user:
+            return HttpResponseForbidden(
+                "Not authorized to download this race file.")
+        return sendfile(
+            self.request, self.object.racefile.file.path, attachment=True,
+            attachment_filename='{name}.r1'.format(
+                name=slugify(self.object.identifier)[:8])
+        )
 
 
 class RaceFileUpload(CreateView):
