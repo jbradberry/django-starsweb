@@ -332,36 +332,60 @@ class ScoreGraphView(DetailView):
         return super(ScoreGraphView, self).get_context_data(**context)
 
 
-class UserRaceFileDownload(SingleObjectMixin, View):
-    model = models.UserRaceFile
+class UserRaceMixin(object):
+    def get_userrace(self):
+        pk = self.kwargs.get('pk', None)
 
+        try:
+            userrace = models.UserRace.objects.get(pk=pk)
+        except models.UserRace.DoesNotExist:
+            raise Http404("No race found matching the query.")
+
+        return userrace
+
+
+class UserRaceDownload(UserRaceMixin, View):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(UserRaceFileDownload, self).dispatch(*args, **kwargs)
+        return super(UserRaceDownload, self).dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if self.object.user != self.request.user:
+        self.userrace = self.get_userrace()
+        if self.userrace.user != self.request.user:
             return HttpResponseForbidden(
                 "Not authorized to download this race file.")
+        if self.userrace.racefile is None:
+            raise Http404("No race file available.")
         return sendfile(
-            self.request, self.object.racefile.file.path, attachment=True,
+            self.request, self.userrace.racefile.file.path, attachment=True,
             attachment_filename='{name}.r1'.format(
-                name=slugify(self.object.identifier)[:8])
+                name=slugify(self.userrace.identifier)[:8])
         )
 
 
-class RaceFileUpload(CreateView):
+class UserRaceUpload(UserRaceMixin, CreateView):
     form_class = forms.RaceFileForm
     template_name = 'starsweb/racefile_upload.html'
     success_url = reverse_lazy('game_list')
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(RaceFileUpload, self).dispatch(*args, **kwargs)
+        return super(UserRaceUpload, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.userrace = self.get_userrace()
+        if self.userrace.user != self.request.user:
+            return HttpResponseForbidden("Not authorized to upload.")
+        return super(UserRaceUpload, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.userrace = self.get_userrace()
+        if self.userrace.user != self.request.user:
+            return HttpResponseForbidden("Not authorized to upload.")
+        return super(UserRaceUpload, self).post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        form.instance.user = self.request.user
+        form.instance.upload_user = self.request.user
 
         race_struct = form.stars_file.structs[1]
         name = race_struct.race_name
@@ -405,7 +429,7 @@ class RaceFileUpload(CreateView):
             self.request,
             "The race file has successfully been uploaded."
         )
-        return super(RaceFileUpload, self).form_valid(form)
+        return super(UserRaceUpload, self).form_valid(form)
 
 
 class BoundRaceFileUpload(ParentRaceMixin, CreateView):
@@ -420,7 +444,7 @@ class BoundRaceFileUpload(ParentRaceMixin, CreateView):
         return self.game.get_absolute_url()
 
     def form_valid(self, form):
-        form.instance.user = self.request.user
+        form.instance.upload_user = self.request.user
 
         race_struct = form.stars_file.structs[1]
         name = race_struct.race_name

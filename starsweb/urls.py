@@ -9,7 +9,7 @@ from . import views
 urlpatterns = patterns('',
     url(r'^$', RedirectView.as_view(url=reverse_lazy('game_list'),
                                     permanent=False)),
-    url(r'^user/racefile/(?P<pk>\d+)/$', views.UserRaceFileDownload.as_view(),
+    url(r'^user/race/download/(?P<pk>\d+)/$', views.UserRaceDownload.as_view(),
         name='userrace_download'),
     url(r'^game/$', views.GameListView.as_view(), name='game_list'),
     url(r'^game/(?P<slug>[-\w]+)/$', views.GameDetailView.as_view(),
@@ -29,7 +29,6 @@ urlpatterns = patterns('',
     url(r'^game/(?P<game_slug>[-\w]+)/manage/(?P<race_slug>[-\w]+)/download/$',
         views.BoundRaceFileDownload.as_view(), name='race_download'),
     url(r'^create/$', views.GameCreateView.as_view(), name='create_game'),
-    url(r'^upload/$', views.RaceFileUpload.as_view(), name='racefile_upload'),
 )
 
 if 'micropress' in settings.INSTALLED_APPS:

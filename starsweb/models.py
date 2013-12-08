@@ -115,17 +115,17 @@ class Race(models.Model):
             return self.player_number + 1
 
 
-class UserRaceFile(models.Model):
-    user = models.ForeignKey('auth.User')
+class UserRace(models.Model):
+    user = models.ForeignKey('auth.User', related_name='racepool')
     identifier = models.CharField(max_length=64)
-    racefile = models.ForeignKey(StarsFile)
+    racefile = models.ForeignKey(StarsFile, null=True)
 
     class Meta:
         unique_together = ('user', 'identifier')
 
 
-class GameRaceFile(models.Model):
-    race = models.ForeignKey(Race, unique=True)
+class GameRace(models.Model):
+    race = models.ForeignKey(Race, unique=True, related_name='official')
     racefile = models.ForeignKey(StarsFile)
 
 
