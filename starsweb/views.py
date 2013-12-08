@@ -382,7 +382,9 @@ class UserRaceUpload(UserRaceMixin, CreateView):
         self.userrace = self.get_userrace()
         if self.userrace.user != self.request.user:
             return HttpResponseForbidden("Not authorized to upload.")
-        return super(UserRaceUpload, self).post(request, *args, **kwargs)
+        response = super(UserRaceUpload, self).post(request, *args, **kwargs)
+        self.userrace.racefile = self.object
+        self.userrace.save()
 
     def form_valid(self, form):
         form.instance.upload_user = self.request.user
@@ -430,6 +432,24 @@ class UserRaceUpload(UserRaceMixin, CreateView):
             "The race file has successfully been uploaded."
         )
         return super(UserRaceUpload, self).form_valid(form)
+
+
+class RaceFileDownload(ParentRaceMixin, View):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RaceFileDownload, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user).exists():
+            return HttpResponseForbidden(
+                "Not authorized to download files for this race.")
+        if self.race.racefile is None:
+            raise Http404("No race file available.")
+        return sendfile(
+            self.request, self.race.racefile.file.path, attachment=True,
+            attachment_filename='{name}.r1'.format(name=self.race.slug))
 
 
 class RaceFileUpload(ParentRaceMixin, CreateView):
@@ -494,21 +514,3 @@ class RaceFileUpload(ParentRaceMixin, CreateView):
         if self.game.state != 'S':
             return HttpResponseForbidden("Game is no longer in setup.")
         return super(RaceFileUpload, self).post(request, *args, **kwargs)
-
-
-class RaceFileDownload(ParentRaceMixin, View):
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(RaceFileDownload, self).dispatch(*args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        self.game = self.get_game()
-        self.race = self.get_race()
-        if not self.race.ambassadors.filter(user=self.request.user).exists():
-            return HttpResponseForbidden(
-                "Not authorized to download files for this race.")
-        if self.race.racefile is None:
-            raise Http404("No race file available.")
-        return sendfile(
-            self.request, self.race.racefile.file.path, attachment=True,
-            attachment_filename='{name}.r1'.format(name=self.race.slug))
