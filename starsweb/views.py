@@ -385,6 +385,7 @@ class UserRaceUpload(UserRaceMixin, CreateView):
         response = super(UserRaceUpload, self).post(request, *args, **kwargs)
         self.userrace.racefile = self.object
         self.userrace.save()
+        return response
 
     def form_valid(self, form):
         form.instance.upload_user = self.request.user

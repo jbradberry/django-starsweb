@@ -1,6 +1,7 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
+from django.utils.html import escape
 from django.test import TestCase
 from django.conf import settings
 
@@ -880,6 +881,10 @@ class UserRaceDownloadTestCase(TestCase):
         self.download_url = reverse('userrace_download',
                                     kwargs={'pk': self.userrace.pk})
 
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
     def test_authorized(self):
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 200)
@@ -911,6 +916,134 @@ class UserRaceDownloadTestCase(TestCase):
 
         response = self.client.get(download_url)
         self.assertEqual(response.status_code, 404)
+
+
+class UserRaceUploadTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.userrace = models.UserRace(user=self.user,
+                                        identifier="Gestalti v1")
+        self.userrace.save()
+
+        self.upload_url = reverse('userrace_upload',
+                                  kwargs={'pk': self.userrace.pk})
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
+    def test_authorized(self):
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+        response = self.client.get(self.upload_url)
+        self.assertEqual(response.status_code, 200)
+
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            response = self.client.post(self.upload_url, {'file': f},
+                                        follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,
+                            "The race file has successfully been uploaded.")
+        self.assertNotContains(response,
+                               escape("name had the word 'The' before it."))
+        self.assertEqual(models.StarsFile.objects.count(), 1)
+        self.assertIsNotNone(models.UserRace.objects.get().racefile)
+
+    def test_unauthorized(self):
+        self.user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+        response = self.client.get(self.upload_url)
+        self.assertEqual(response.status_code, 403)
+
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            response = self.client.post(self.upload_url, {'file': f})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+    def test_anonymous(self):
+        self.client.logout()
+
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+        response = self.client.get(self.upload_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.upload_url))
+
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            response = self.client.post(self.upload_url, {'file': f})
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.upload_url))
+
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+    def test_file_not_stars_file(self):
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+        with open(os.path.join(PATH, '__init__.py')) as f:
+            response = self.client.post(self.upload_url, {'file': f})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Not a valid Stars race file.")
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+    def test_file_not_race_file(self):
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+            response = self.client.post(self.upload_url, {'file': f})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Not a valid Stars race file.")
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+    def test_userrace_does_not_exist(self):
+        self.assertEqual(models.UserRace.objects.count(), 1)
+        upload_url = reverse('userrace_upload',
+                             kwargs={'pk': self.userrace.pk + 1})
+
+        response = self.client.get(upload_url)
+        self.assertEqual(response.status_code, 404)
+
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            response = self.client.post(upload_url, {'file': f})
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+    def test_prepended_the_in_race_name(self):
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.UserRace.objects.get().racefile)
+
+        response = self.client.get(self.upload_url)
+        self.assertEqual(response.status_code, 200)
+
+        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+            response = self.client.post(self.upload_url, {'file': f},
+                                        follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,
+                            "The race file has successfully been uploaded.")
+        self.assertContains(response,
+                            escape("name had the word 'The' before it."))
+        self.assertEqual(models.StarsFile.objects.count(), 1)
+        self.assertIsNotNone(models.UserRace.objects.get().racefile)
 
 
 class RaceFileDownloadTestCase(TestCase):
