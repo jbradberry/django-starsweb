@@ -864,6 +864,55 @@ class RaceDashboardViewTestCase(TestCase):
                                                    dashboard_url))
 
 
+class UserRaceDownloadTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.starsfile = models.StarsFile(upload_user=self.user,
+                                          type='r',
+                                          file=SimpleUploadedFile("file.r1", "test"))
+        self.starsfile.save()
+        self.userrace = models.UserRace(user=self.user,
+                                        identifier="Gestalti v1",
+                                        racefile=self.starsfile)
+        self.userrace.save()
+        self.download_url = reverse('userrace_download',
+                                    kwargs={'pk': self.userrace.pk})
+
+    def test_authorized(self):
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Disposition'],
+                         'attachment; filename="gestalti.r1"')
+        self.assertEqual(response['Content-length'], '4')
+
+    def test_unauthorized(self):
+        self.user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response,
+                            "Not authorized to download this race file.",
+                            status_code=403)
+
+    def test_anonymous(self):
+        self.client.logout()
+
+        response = self.client.get(self.download_url)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.download_url))
+
+    def test_does_not_exist(self):
+        download_url = reverse('userrace_download',
+                               kwargs={'pk': self.userrace.pk + 1})
+
+        response = self.client.get(download_url)
+        self.assertEqual(response.status_code, 404)
+
+
 class RaceFileDownloadTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')
@@ -914,6 +963,7 @@ class RaceFileDownloadTestCase(TestCase):
 
         self.assertEqual(models.StarsFile.objects.filter(type='r').count(), 1)
         response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 403)
         self.assertContains(response,
                             "Not authorized to download files for this race.",
                             status_code=403)
