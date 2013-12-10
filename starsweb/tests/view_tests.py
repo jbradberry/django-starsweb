@@ -554,7 +554,7 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.get().name, "Gestalti")
 
     def test_not_authorized(self):
-        self.user = User.objects.create_user(username='jrb', password='password')
+        user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -705,7 +705,7 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Ambassador.objects.get().name, "KonTiki")
 
     def test_not_authorized(self):
-        self.user = User.objects.create_user(username='jrb', password='password')
+        user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -843,7 +843,7 @@ class RaceDashboardViewTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_not_authorized(self):
-        self.user = User.objects.create_user(username='jrb', password='password')
+        user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         dashboard_url = reverse('race_dashboard',
@@ -924,6 +924,107 @@ class UserRaceCreateTestCase(TestCase):
         self.assertEqual(models.UserRace.objects.count(), 1)
 
 
+class UserRaceUpdateTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.userrace = models.UserRace(user=self.user,
+                                        identifier="Gestalti v1")
+        self.userrace.save()
+
+        self.update_url = reverse('userrace_update',
+                                  kwargs={'pk': self.userrace.pk})
+
+    def test_success(self):
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(self.update_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+        self.assertContains(response, "Gestalti v1")
+
+        response = self.client.post(self.update_url,
+                                    {'identifier': "Histalti"})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(models.UserRace.objects.count(), 1)
+        userrace = models.UserRace.objects.get()
+        self.assertEqual(userrace.user, self.user)
+        self.assertEqual(userrace.identifier, "Histalti")
+
+    def test_unauthorized(self):
+        user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(self.update_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(self.update_url,
+                                    {'identifier': "Histalti"})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(models.UserRace.objects.count(), 1)
+        userrace = models.UserRace.objects.get()
+        self.assertEqual(userrace.user, self.user)
+        self.assertEqual(userrace.identifier, "Gestalti v1")
+
+    def test_anonymous(self):
+        self.client.logout()
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(self.update_url)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.update_url))
+
+        response = self.client.post(self.update_url,
+                                    {'identifier': "Histalti"})
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.update_url))
+        self.assertEqual(models.UserRace.objects.count(), 1)
+        userrace = models.UserRace.objects.get()
+        self.assertEqual(userrace.user, self.user)
+        self.assertEqual(userrace.identifier, "Gestalti v1")
+
+    def test_does_not_exist(self):
+        update_url = reverse('userrace_update',
+                             kwargs={'pk': self.userrace.pk + 1})
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(update_url,
+                                    {'identifier': "Histalti"})
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+        userrace = models.UserRace.objects.get()
+        self.assertEqual(userrace.user, self.user)
+        self.assertEqual(userrace.identifier, "Gestalti v1")
+
+    def test_already_exists(self):
+        models.UserRace.objects.create(user=self.user,
+                                       identifier="Histalti")
+        self.assertEqual(models.UserRace.objects.count(), 2)
+
+        response = self.client.post(self.update_url,
+                                    {'identifier': "Histalti"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "User race with this User and Identifier already exists.")
+
+        self.assertEqual(models.UserRace.objects.count(), 2)
+        userrace = models.UserRace.objects.get(pk=self.userrace.pk)
+        self.assertEqual(userrace.user, self.user)
+        self.assertEqual(userrace.identifier, "Gestalti v1")
+
+
 class UserRaceDownloadTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')
@@ -952,7 +1053,7 @@ class UserRaceDownloadTestCase(TestCase):
         self.assertEqual(response['Content-length'], '4')
 
     def test_unauthorized(self):
-        self.user = User.objects.create_user(username='jrb', password='password')
+        user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         response = self.client.get(self.download_url)
@@ -1012,7 +1113,7 @@ class UserRaceUploadTestCase(TestCase):
         self.assertIsNotNone(models.UserRace.objects.get().racefile)
 
     def test_unauthorized(self):
-        self.user = User.objects.create_user(username='jrb', password='password')
+        user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -1150,7 +1251,7 @@ class RaceFileDownloadTestCase(TestCase):
         self.assertEqual(response['Content-length'], '4')
 
     def test_unauthorized(self):
-        self.user = User.objects.create_user(username='jrb', password='password')
+        user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.filter(type='r').count(), 1)
@@ -1235,7 +1336,7 @@ class RaceFileUploadTestCase(TestCase):
         self.assertIsNotNone(models.Race.objects.get().racefile)
 
     def test_unauthorized(self):
-        self.user = User.objects.create_user(username='jrb', password='password')
+        user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.count(), 0)

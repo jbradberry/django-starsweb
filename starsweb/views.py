@@ -352,6 +352,39 @@ class UserRaceCreate(CreateView):
         return super(UserRaceCreate, self).form_valid(form)
 
 
+class UserRaceUpdate(UpdateView):
+    model = models.UserRace
+    form_class = forms.UserRaceForm
+    success_url = reverse_lazy('game_list')
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(UserRaceUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        try:
+            form.instance.full_clean()
+        except ValidationError as e:
+            form._update_errors(e.message_dict)
+            return self.form_invalid(form)
+        return super(UserRaceUpdate, self).form_valid(form)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.user != self.request.user:
+            return HttpResponseForbidden(
+                "Not authorized to update this user race.")
+        return super(UserRaceUpdate, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.user != self.request.user:
+            return HttpResponseForbidden(
+                "Not authorized to update this user race.")
+        return super(UserRaceUpdate, self).post(request, *args, **kwargs)
+
+
 class UserRaceMixin(object):
     def get_userrace(self):
         pk = self.kwargs.get('pk', None)
