@@ -108,3 +108,9 @@ class RaceFileForm(forms.ModelForm):
             raise forms.ValidationError("Not a valid Stars race file.")
 
         return f
+
+
+class UserRaceForm(forms.ModelForm):
+    class Meta:
+        model = models.UserRace
+        fields = ('identifier',)

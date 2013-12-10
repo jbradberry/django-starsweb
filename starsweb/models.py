@@ -118,10 +118,13 @@ class Race(models.Model):
 class UserRace(models.Model):
     user = models.ForeignKey('auth.User', related_name='racepool')
     identifier = models.CharField(max_length=64)
-    racefile = models.ForeignKey(StarsFile, null=True)
+    racefile = models.ForeignKey(StarsFile, null=True, blank=True)
 
     class Meta:
         unique_together = ('user', 'identifier')
+
+    def __unicode__(self):
+        return u'{0}: {1}'.format(self.user, self.identifier)
 
 
 class GameRace(models.Model):

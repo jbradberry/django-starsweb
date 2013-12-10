@@ -865,6 +865,65 @@ class RaceDashboardViewTestCase(TestCase):
                                                    dashboard_url))
 
 
+class UserRaceCreateTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.create_url = reverse('userrace_create')
+
+    def test_success(self):
+        self.assertEqual(models.UserRace.objects.count(), 0)
+
+        response = self.client.get(self.create_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+
+        response = self.client.post(self.create_url,
+                                    {'identifier': "Gestalti v1"})
+        self.assertEqual(response.status_code, 302)
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+        userrace = models.UserRace.objects.get()
+        self.assertEqual(userrace.user, self.user)
+        self.assertEqual(userrace.identifier, "Gestalti v1")
+
+    def test_anonymous(self):
+        self.client.logout()
+
+        self.assertEqual(models.UserRace.objects.count(), 0)
+
+        response = self.client.get(self.create_url)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.create_url))
+
+        response = self.client.post(self.create_url,
+                                    {'identifier': "Gestalti v1"})
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.create_url))
+
+        self.assertEqual(models.UserRace.objects.count(), 0)
+
+    def test_already_exists(self):
+        models.UserRace.objects.create(user=self.user,
+                                       identifier="Gestalti v1")
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(self.create_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+
+        response = self.client.post(self.create_url,
+                                    {'identifier': "Gestalti v1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "User race with this User and Identifier already exists.")
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+
 class UserRaceDownloadTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')

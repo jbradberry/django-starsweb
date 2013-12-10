@@ -1,5 +1,5 @@
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
-                                  TemplateView, View)
+                                  DeleteView, TemplateView, View)
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
@@ -10,6 +10,7 @@ from django.http import Http404, HttpResponseForbidden
 from django.core.files.base import ContentFile
 from django.contrib import messages
 from django.db.models import Max
+from django.forms import ValidationError
 
 from sendfile import sendfile
 import json
@@ -330,6 +331,25 @@ class ScoreGraphView(DetailView):
         context['scorename'] = score_names.get(section, '')
         context.update(kwargs)
         return super(ScoreGraphView, self).get_context_data(**context)
+
+
+class UserRaceCreate(CreateView):
+    model = models.UserRace
+    form_class = forms.UserRaceForm
+    success_url = reverse_lazy('game_list')
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(UserRaceCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        try:
+            form.instance.full_clean()
+        except ValidationError as e:
+            form._update_errors(e.message_dict)
+            return self.form_invalid(form)
+        return super(UserRaceCreate, self).form_valid(form)
 
 
 class UserRaceMixin(object):
