@@ -385,6 +385,29 @@ class UserRaceUpdate(UpdateView):
         return super(UserRaceUpdate, self).post(request, *args, **kwargs)
 
 
+class UserRaceDelete(DeleteView):
+    model = models.UserRace
+    success_url = reverse_lazy('game_list')
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(UserRaceDelete, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.user != self.request.user:
+            return HttpResponseForbidden(
+                "Not authorized to delete this user race.")
+        return super(UserRaceDelete, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.user != self.request.user:
+            return HttpResponseForbidden(
+                "Not authorized to delete this user race.")
+        return super(UserRaceDelete, self).post(request, *args, **kwargs)
+
+
 class UserRaceMixin(object):
     def get_userrace(self):
         pk = self.kwargs.get('pk', None)

@@ -1025,6 +1025,76 @@ class UserRaceUpdateTestCase(TestCase):
         self.assertEqual(userrace.identifier, "Gestalti v1")
 
 
+class UserRaceDeleteTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.userrace = models.UserRace(user=self.user,
+                                        identifier="Gestalti v1")
+        self.userrace.save()
+
+        self.delete_url = reverse('userrace_delete',
+                                  kwargs={'pk': self.userrace.pk})
+
+    def test_success(self):
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(self.delete_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Are you sure you want to delete")
+
+        response = self.client.post(self.delete_url)
+        self.assertEqual(response.status_code, 302)
+
+        self.assertEqual(models.UserRace.objects.count(), 0)
+
+    def test_unauthorized(self):
+        user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(self.delete_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(self.delete_url)
+        self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+    def test_anonymous(self):
+        self.client.logout()
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(self.delete_url)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.delete_url))
+
+        response = self.client.post(self.delete_url)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.delete_url))
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+    def test_does_not_exist(self):
+        delete_url = reverse('userrace_delete',
+                             kwargs={'pk': self.userrace.pk + 1})
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+        response = self.client.get(delete_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(delete_url)
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.UserRace.objects.count(), 1)
+
+
 class UserRaceDownloadTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')
