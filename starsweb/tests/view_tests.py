@@ -381,10 +381,10 @@ class RaceUpdateViewTestCase(TestCase):
                            plural_name='Gestalti',
                            slug='gestalti')
         race.save()
-        ambassador = models.Ambassador(race=race,
-                                       user=self.user,
-                                       name="KonTiki")
-        ambassador.save()
+        self.ambassador = models.Ambassador(race=race,
+                                            user=self.user,
+                                            name="KonTiki")
+        self.ambassador.save()
 
     def test_view_form(self):
         self.assertEqual(models.Race.objects.count(), 1)
@@ -574,6 +574,27 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(race.slug, "gestalti")
         self.assertEqual(race.name, "Gestalti")
 
+    def test_ambassador_no_longer_active(self):
+        self.ambassador.active = False
+        self.ambassador.save()
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('race_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(update_url,
+                                    {'name': 'Histalti',
+                                     'plural_name': 'Histalti'})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(models.Race.objects.count(), 1)
+        race = models.Race.objects.get()
+        self.assertEqual(race.slug, "gestalti")
+        self.assertEqual(race.name, "Gestalti")
+
     def test_race_does_not_exist(self):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -612,10 +633,10 @@ class AmbassadorUpdateViewTestCase(TestCase):
                            plural_name='Gestalti',
                            slug='gestalti')
         race.save()
-        ambassador = models.Ambassador(race=race,
-                                       user=self.user,
-                                       name="KonTiki")
-        ambassador.save()
+        self.ambassador = models.Ambassador(race=race,
+                                            user=self.user,
+                                            name="KonTiki")
+        self.ambassador.save()
 
     def test_view_form(self):
         self.assertEqual(models.Race.objects.count(), 1)
@@ -707,6 +728,24 @@ class AmbassadorUpdateViewTestCase(TestCase):
     def test_not_authorized(self):
         user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        update_url = reverse('ambassador_update',
+                             kwargs={'game_slug': 'total-war-in-ulfland',
+                                     'race_slug': 'gestalti'})
+        response = self.client.get(update_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(update_url,
+                                    {'name': 'Kon-Tiki'})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.get().name, "KonTiki")
+
+    def test_ambassador_no_longer_active(self):
+        self.ambassador.active = False
+        self.ambassador.save()
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
@@ -845,6 +884,16 @@ class RaceDashboardViewTestCase(TestCase):
     def test_not_authorized(self):
         user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
+
+        dashboard_url = reverse('race_dashboard',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'gestalti'})
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_ambassador_no_longer_active(self):
+        self.ambassador.active = False
+        self.ambassador.save()
 
         dashboard_url = reverse('race_dashboard',
                                 kwargs={'game_slug': 'total-war-in-ulfland',
@@ -1331,6 +1380,19 @@ class RaceFileDownloadTestCase(TestCase):
                             "Not authorized to download files for this race.",
                             status_code=403)
 
+    def test_ambassador_no_longer_active(self):
+        # allow players who are no longer active in a game to still
+        # download the race file.
+        self.ambassador.active = False
+        self.ambassador.save()
+
+        self.assertEqual(models.StarsFile.objects.filter(type='r').count(), 1)
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Disposition'],
+                         'attachment; filename="gestalti.r1"')
+        self.assertEqual(response['Content-length'], '4')
+
     def test_anonymous(self):
         self.client.logout()
 
@@ -1408,6 +1470,22 @@ class RaceFileUploadTestCase(TestCase):
     def test_unauthorized(self):
         user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
+
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(self.race.racefile)
+
+        response = self.client.get(self.upload_url)
+        self.assertEqual(response.status_code, 403)
+
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            response = self.client.post(self.upload_url, {'file': f})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+        self.assertIsNone(models.Race.objects.get().racefile)
+
+    def test_ambassador_no_longer_active(self):
+        self.ambassador.active = False
+        self.ambassador.save()
 
         self.assertEqual(models.StarsFile.objects.count(), 0)
         self.assertIsNone(self.race.racefile)

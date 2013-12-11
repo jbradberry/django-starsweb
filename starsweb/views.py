@@ -200,7 +200,8 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
 
     def get_object(self, queryset=None):
         race = super(RaceUpdateView, self).get_object()
-        if not race.ambassadors.filter(user=self.request.user).exists():
+        if not race.ambassadors.filter(user=self.request.user,
+                                       active=True).exists():
             raise PermissionDenied
         return race
 
@@ -229,7 +230,8 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
         return self.game.get_absolute_url()
 
     def get_queryset(self):
-        return self.race.ambassadors.filter(user=self.request.user)
+        return self.race.ambassadors.filter(user=self.request.user,
+                                            active=True)
 
     def get_object(self):
         try:
@@ -261,7 +263,8 @@ class RaceDashboardView(ParentRaceMixin, TemplateView):
 
     def get_ambassador(self):
         try:
-            return self.race.ambassadors.get(user=self.request.user)
+            return self.race.ambassadors.get(user=self.request.user,
+                                             active=True)
         except models.Ambassador.DoesNotExist:
             raise PermissionDenied
 
@@ -575,7 +578,8 @@ class RaceFileUpload(ParentRaceMixin, CreateView):
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
         self.race = self.get_race()
-        if not self.race.ambassadors.filter(user=self.request.user).exists():
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
             return HttpResponseForbidden(
                 "Not authorized to upload files for this race.")
         if self.game.state != 'S':
@@ -585,7 +589,8 @@ class RaceFileUpload(ParentRaceMixin, CreateView):
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
         self.race = self.get_race()
-        if not self.race.ambassadors.filter(user=self.request.user).exists():
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
             return HttpResponseForbidden(
                 "Not authorized to upload files for this race.")
         if self.game.state != 'S':
