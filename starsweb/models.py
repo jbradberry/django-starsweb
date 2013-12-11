@@ -89,7 +89,7 @@ class Race(models.Model):
     plural_name = models.CharField(max_length=15)
     slug = models.SlugField(max_length=16)
     player_number = models.PositiveSmallIntegerField(null=True, blank=True)
-    racefile = models.ForeignKey(StarsFile, null=True)
+    racefile = models.ForeignKey(StarsFile, null=True, blank=True)
 
     class Meta:
         unique_together = (('game', 'slug'),

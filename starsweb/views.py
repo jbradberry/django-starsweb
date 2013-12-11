@@ -498,6 +498,9 @@ class RaceFileBind(ParentGameMixin, UpdateView):
             form.instance.racefile = new_starsfile
             messages.success(self.request,
                              "The race file has successfully been attached.")
+        else:
+            messages.success(self.request,
+                             "The race file has successfully been unattached.")
 
         return super(RaceFileBind, self).form_valid(form)
 

@@ -1216,6 +1216,23 @@ class RaceFileBindTestCase(TestCase):
                                "name or plural name has been adjusted to match"
                                " your race")
 
+    def test_unbind_race_file(self):
+        race = models.Race.objects.get()
+        race.racefile = self.starsfile
+        race.save()
+        self.assertIsNotNone(race.racefile)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': ''},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "This field is required.")
+        self.assertContains(response,
+                            "The race file has successfully been unattached.")
+
+        race = models.Race.objects.get()
+        self.assertIsNone(race.racefile)
+
     def test_name_change(self):
         race = models.Race.objects.get()
         self.assertIsNone(race.racefile)
