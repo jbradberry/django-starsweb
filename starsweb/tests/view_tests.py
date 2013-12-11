@@ -804,18 +804,31 @@ class RaceDashboardViewTestCase(TestCase):
                                             user=self.user,
                                             name="KonTiki")
         self.ambassador.save()
+        self.url_kwargs = {'game_slug': 'total-war-in-ulfland',
+                           'race_slug': 'gestalti'}
+        self.dashboard_url = reverse('race_dashboard',
+                                     kwargs=self.url_kwargs)
 
     def test_setup_state(self):
         self.assertEqual(self.game.state, 'S')
 
-        dashboard_url = reverse('race_dashboard',
-                                kwargs={'game_slug': 'total-war-in-ulfland',
-                                        'race_slug': 'gestalti'})
-        response = self.client.get(dashboard_url)
+        response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertIn('race_form', response.context)
-        self.assertIn('raceupload_form', response.context)
         self.assertIn('ambassador_form', response.context)
+        self.assertIn('raceupload_form', response.context)
+        self.assertIn('racechoose_form', response.context)
+
+        self.assertContains(response, reverse('race_update',
+                                              kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('ambassador_update',
+                                              kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_download',
+                                                 kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('race_upload',
+                                              kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('race_bind',
+                                              kwargs=self.url_kwargs))
 
         self.assertContains(response, "<b>Player Number:</b> N/A")
 
@@ -827,14 +840,23 @@ class RaceDashboardViewTestCase(TestCase):
 
         self.assertEqual(self.game.state, 'A')
 
-        dashboard_url = reverse('race_dashboard',
-                                kwargs={'game_slug': 'total-war-in-ulfland',
-                                        'race_slug': 'gestalti'})
-        response = self.client.get(dashboard_url)
+        response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('race_form', response.context)
-        self.assertNotIn('raceupload_form', response.context)
         self.assertIn('ambassador_form', response.context)
+        self.assertNotIn('raceupload_form', response.context)
+        self.assertNotIn('racechoose_form', response.context)
+
+        self.assertNotContains(response, reverse('race_update',
+                                                 kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('ambassador_update',
+                                              kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_download',
+                                                 kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_upload',
+                                                 kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_bind',
+                                                 kwargs=self.url_kwargs))
 
         self.assertContains(response, "<b>Player Number:</b> 1")
 
@@ -844,14 +866,23 @@ class RaceDashboardViewTestCase(TestCase):
 
         self.assertEqual(self.game.state, 'P')
 
-        dashboard_url = reverse('race_dashboard',
-                                kwargs={'game_slug': 'total-war-in-ulfland',
-                                        'race_slug': 'gestalti'})
-        response = self.client.get(dashboard_url)
+        response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('race_form', response.context)
-        self.assertNotIn('raceupload_form', response.context)
         self.assertIn('ambassador_form', response.context)
+        self.assertNotIn('raceupload_form', response.context)
+        self.assertNotIn('racechoose_form', response.context)
+
+        self.assertNotContains(response, reverse('race_update',
+                                                 kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('ambassador_update',
+                                              kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_download',
+                                                 kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_upload',
+                                                 kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_bind',
+                                                 kwargs=self.url_kwargs))
 
     def test_finished_state(self):
         self.game.state = 'F'
@@ -859,14 +890,23 @@ class RaceDashboardViewTestCase(TestCase):
 
         self.assertEqual(self.game.state, 'F')
 
-        dashboard_url = reverse('race_dashboard',
-                                kwargs={'game_slug': 'total-war-in-ulfland',
-                                        'race_slug': 'gestalti'})
-        response = self.client.get(dashboard_url)
+        response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('race_form', response.context)
-        self.assertNotIn('raceupload_form', response.context)
         self.assertNotIn('ambassador_form', response.context)
+        self.assertNotIn('raceupload_form', response.context)
+        self.assertNotIn('racechoose_form', response.context)
+
+        self.assertNotContains(response, reverse('race_update',
+                                                 kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('ambassador_update',
+                                                 kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_download',
+                                                 kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_upload',
+                                                 kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_bind',
+                                                 kwargs=self.url_kwargs))
 
     def test_game_does_not_exist(self):
         dashboard_url = reverse('race_dashboard',
@@ -886,33 +926,24 @@ class RaceDashboardViewTestCase(TestCase):
         user = User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
-        dashboard_url = reverse('race_dashboard',
-                                kwargs={'game_slug': 'total-war-in-ulfland',
-                                        'race_slug': 'gestalti'})
-        response = self.client.get(dashboard_url)
+        response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 403)
 
     def test_ambassador_no_longer_active(self):
         self.ambassador.active = False
         self.ambassador.save()
 
-        dashboard_url = reverse('race_dashboard',
-                                kwargs={'game_slug': 'total-war-in-ulfland',
-                                        'race_slug': 'gestalti'})
-        response = self.client.get(dashboard_url)
+        response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 403)
 
     def test_anonymous(self):
         self.client.logout()
 
-        dashboard_url = reverse('race_dashboard',
-                                kwargs={'game_slug': 'total-war-in-ulfland',
-                                        'race_slug': 'gestalti'})
-        response = self.client.get(dashboard_url)
+        response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   dashboard_url))
+                                                   self.dashboard_url))
 
 
 class UserRaceCreateTestCase(TestCase):

@@ -10,6 +10,7 @@
 <div class="panel panel-default">
 <div class="panel-heading"><span class="lead">Race</span></div>
 <div class="panel-body">
+<p><b>Player Number:</b> {{ race.number|default_if_none:"N/A" }}</p>
 {% if race_form %}
 <form method="post" action="{% url 'race_update' game_slug=game.slug race_slug=race.slug %}">
   {% csrf_token %}
@@ -20,7 +21,6 @@
 <p><b>Name:</b> {{ race.name }}</p>
 <p><b>Plural Name:</b> {{ race.plural_name }}</p>
 {% endif %}
-<p><b>Player Number:</b> {{ race.number|default_if_none:"N/A" }}</p>
 </div>
 </div>
 </div>
@@ -46,6 +46,7 @@
 <div class="panel panel-default">
 <div class="panel-heading"><span class="lead">Race File</span></div>
 <div class="panel-body">
+
 <p>
 <b>Current File:</b>
 {% if race.racefile %}
@@ -54,13 +55,28 @@
 N/A
 {% endif %}
 </p>
+
+<div class="row">
 {% if raceupload_form %}
+<div class="col-md-6">
 <form enctype="multipart/form-data" method="post" action="{% url 'race_upload' game_slug=game.slug race_slug=race.slug %}">
   {% csrf_token %}
   {{ raceupload_form.as_p }}
   <input type="submit" value="Upload Race" />
 </form>
+</div>
 {% endif %}
+
+{% if racechoose_form %}
+<div class="col-md-6">
+<form method="post" action="{% url 'race_bind' game_slug=game.slug race_slug=race.slug %}">
+  {% csrf_token %}
+  {{ racechoose_form.as_p }}
+  <input type="submit" value="Attach Race" />
+</form>
+</div>
+{% endif %}
+</div>
 </div>
 </div>
 </div>
