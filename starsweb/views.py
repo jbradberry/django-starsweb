@@ -11,8 +11,10 @@ from django.core.files.base import ContentFile
 from django.contrib import messages
 from django.db.models import Max
 from django.forms import ValidationError
+from django.core.files import File
 
 from sendfile import sendfile
+from starslib import base
 import json
 
 from . import models
@@ -409,6 +411,95 @@ class UserRaceDelete(DeleteView):
             return HttpResponseForbidden(
                 "Not authorized to delete this user race.")
         return super(UserRaceDelete, self).post(request, *args, **kwargs)
+
+
+class RaceFileBind(ParentGameMixin, UpdateView):
+    model = models.Race
+    form_class = forms.ChooseUserRaceForm
+    success_url = reverse_lazy('game_list')
+
+    slug_url_kwarg = 'race_slug'
+
+    def get_success_url(self):
+        return self.game.get_absolute_url()
+
+    def get_queryset(self):
+        return self.game.races.all()
+
+    def get_object(self, queryset=None):
+        race = super(RaceFileBind, self).get_object()
+        if not race.ambassadors.filter(user=self.request.user,
+                                       active=True).exists():
+            raise PermissionDenied
+        return race
+
+    def get_form_kwargs(self):
+        kwargs = super(RaceFileBind, self).get_form_kwargs()
+        kwargs.update(user=self.request.user)
+        return kwargs
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RaceFileBind, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        if self.game.state != 'S':
+            return HttpResponseForbidden("Game is no longer in setup.")
+        return super(RaceFileBind, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        if self.game.state != 'S':
+            return HttpResponseForbidden("Game is no longer in setup.")
+        return super(RaceFileBind, self).post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        racefile = form.instance.racefile
+
+        if racefile:
+            sf = base.StarsFile()
+            try:
+                racefile.file.open()
+                data = racefile.file.read()
+                sf.bytes = data
+            finally:
+                racefile.file.close()
+
+            race_struct = sf.structs[1]
+            name = race_struct.race_name
+            plural_name = race_struct.plural_race_name
+            altered = False
+
+            if (name != self.object.name or
+                plural_name != self.object.plural_name):
+                messages.info(
+                    self.request,
+                    "The attached race file's name or plural name has been"
+                    " adjusted to match your race's name and plural name.")
+
+                altered = True
+
+            if altered:
+                race_struct.race_name = self.object.name
+                race_struct.plural_race_name = self.object.plural_name
+
+                content = sf.bytes
+            else:
+                content = data
+
+            new_starsfile = models.StarsFile(
+                upload_user=racefile.upload_user,
+                type=racefile.type,
+            )
+            new_starsfile.save()
+            new_starsfile.file.save('', ContentFile(content))
+
+            form.instance.racefile = new_starsfile
+            messages.success(self.request,
+                             "The race file has successfully been attached.")
+
+        return super(RaceFileBind, self).form_valid(form)
 
 
 class UserRaceMixin(object):

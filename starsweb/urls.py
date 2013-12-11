@@ -36,6 +36,8 @@ urlpatterns = patterns('',
         views.RaceFileUpload.as_view(), name='race_upload'),
     url(r'^game/(?P<game_slug>[-\w]+)/manage/(?P<race_slug>[-\w]+)/download/$',
         views.RaceFileDownload.as_view(), name='race_download'),
+    url(r'^game/(?P<game_slug>[-\w]+)/manage/(?P<race_slug>[-\w]+)/bind/$',
+        views.RaceFileBind.as_view(), name='race_bind'),
     url(r'^create/$', views.GameCreateView.as_view(), name='create_game'),
 )
 

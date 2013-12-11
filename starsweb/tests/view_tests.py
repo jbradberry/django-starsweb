@@ -1,4 +1,5 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files import File
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.utils.html import escape
@@ -1142,6 +1143,281 @@ class UserRaceDeleteTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
         self.assertEqual(models.UserRace.objects.count(), 1)
+
+
+class RaceFileBindTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.game = models.Game(
+            name="Total War in Ulfland",
+            slug="total-war-in-ulfland",
+            host=self.user,
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+        self.race = models.Race(game=self.game,
+                                name='Gestalti',
+                                plural_name='Gestalti',
+                                slug='gestalti')
+        self.race.save()
+        self.ambassador = models.Ambassador(race=self.race,
+                                            user=self.user,
+                                            name="KonTiki")
+        self.ambassador.save()
+        self.starsfile = models.StarsFile(upload_user=self.user,
+                                          type='r')
+        self.starsfile.save()
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            self.starsfile.file.save('foo.r1', File(f))
+        self.userrace = models.UserRace(user=self.user,
+                                        identifier="Gestalti v1",
+                                        racefile=self.starsfile)
+        self.userrace.save()
+
+        self.bind_url = reverse('race_bind',
+                                kwargs={'game_slug': 'total-war-in-ulfland',
+                                        'race_slug': 'gestalti'})
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
+    def test_authorized(self):
+        race = models.Race.objects.get()
+        self.assertIsNone(race.racefile)
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        race = models.Race.objects.get()
+        starsfile = models.StarsFile.objects.get(pk=self.starsfile.pk)
+        self.assertIsNotNone(race.racefile)
+        self.assertNotEqual(race.racefile.pk, starsfile.pk)
+        self.assertNotEqual(race.racefile.file.path, starsfile.file.path)
+
+        with open(race.racefile.file.path) as f:
+            data_new = f.read()
+        with open(starsfile.file.path) as f:
+            data_old = f.read()
+        self.assertEqual(data_new, data_old,
+                         msg="File contents unexpectedly not equal.")
+
+        self.assertContains(response,
+                            "The race file has successfully been attached.")
+        self.assertNotContains(response,
+                               "name or plural name has been adjusted to match"
+                               " your race")
+
+    def test_name_change(self):
+        race = models.Race.objects.get()
+        self.assertIsNone(race.racefile)
+
+        starsfile = models.StarsFile(upload_user=self.user,
+                                     type='r')
+        starsfile.save()
+        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+            starsfile.file.save('foo.r2', File(f))
+        userrace = models.UserRace(user=self.user,
+                                   identifier="SSG",
+                                   racefile=starsfile)
+        userrace.save()
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': starsfile.pk},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        race = models.Race.objects.get()
+        starsfile = models.StarsFile.objects.get(pk=self.starsfile.pk)
+        self.assertIsNotNone(race.racefile)
+        self.assertNotEqual(race.racefile.pk, starsfile.pk)
+        self.assertNotEqual(race.racefile.file.path, starsfile.file.path)
+
+        with open(race.racefile.file.path) as f:
+            data_new = f.read()
+        with open(starsfile.file.path) as f:
+            data_old = f.read()
+        self.assertNotEqual(data_new, data_old,
+                            msg="File contents unexpectedly equal.")
+
+        self.assertContains(response,
+                            "The race file has successfully been attached.")
+        self.assertContains(response,
+                            "name or plural name has been adjusted to match"
+                            " your race")
+
+    def test_unauthorized(self):
+        self.assertIsNone(self.race.racefile)
+
+        user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+
+        self.userrace.user = user
+        self.userrace.save()
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertEqual(response.status_code, 403)
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_ambassador_no_longer_active(self):
+        self.assertIsNone(self.race.racefile)
+
+        self.ambassador.active = False
+        self.ambassador.save()
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertEqual(response.status_code, 403)
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_anonymous(self):
+        self.assertIsNone(self.race.racefile)
+
+        self.client.logout()
+
+        response = self.client.get(self.bind_url)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.bind_url))
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.bind_url))
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_not_authorized_for_userrace(self):
+        self.assertIsNone(self.race.racefile)
+
+        user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+        self.ambassador.user = user
+        self.ambassador.save()
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,
+                            "That choice is not one of the available choices.")
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_active_state(self):
+        self.assertIsNone(self.race.racefile)
+
+        self.game.state = 'A'
+        self.game.save()
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertEqual(response.status_code, 403)
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_paused_state(self):
+        self.assertIsNone(self.race.racefile)
+
+        self.game.state = 'P'
+        self.game.save()
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertEqual(response.status_code, 403)
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_finished_state(self):
+        self.assertIsNone(self.race.racefile)
+
+        self.game.state = 'F'
+        self.game.save()
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertEqual(response.status_code, 403)
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_race_does_not_exist(self):
+        self.assertIsNone(self.race.racefile)
+
+        bind_url = reverse('race_bind',
+                           kwargs={'game_slug': 'total-war-in-ulfland',
+                                   'race_slug': 'histalti'})
+        response = self.client.get(bind_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertEqual(response.status_code, 404)
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_game_does_not_exist(self):
+        self.assertIsNone(self.race.racefile)
+
+        bind_url = reverse('race_update',
+                           kwargs={'game_slug': '500-years-after',
+                                   'race_slug': 'gestalti'})
+        response = self.client.get(bind_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(bind_url,
+                                    {'racefile': self.starsfile.pk})
+        self.assertEqual(response.status_code, 404)
+
+        self.assertIsNone(self.race.racefile)
+
+    def test_userrace_does_not_exist(self):
+        self.assertIsNone(self.race.racefile)
+
+        response = self.client.get(self.bind_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+
+        response = self.client.post(self.bind_url,
+                                    {'racefile': self.starsfile.pk + 1})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,
+                            "That choice is not one of the available choices.")
+
+        self.assertIsNone(self.race.racefile)
 
 
 class UserRaceDownloadTestCase(TestCase):

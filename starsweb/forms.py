@@ -77,6 +77,25 @@ class RaceForm(forms.ModelForm):
         return cleaned_data
 
 
+class ChooseUserRaceForm(forms.ModelForm):
+    class Meta:
+        model = models.Race
+        fields = ('racefile',)
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        super(ChooseUserRaceForm, self).__init__(*args, **kwargs)
+        self.fields['racefile'].queryset = models.StarsFile.objects.filter(
+            userrace__user=user
+        )
+        self.fields['racefile'].choices = [
+            (u'', self.fields['racefile'].empty_label)
+        ] + [
+            (u.racefile.id, u.identifier)
+            for u in models.UserRace.objects.filter(user=user)
+        ]
+
+
 class AmbassadorForm(forms.ModelForm):
     class Meta:
         model = models.Ambassador
