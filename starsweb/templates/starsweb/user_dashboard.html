@@ -1,0 +1,67 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}User Dashboard | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>User Dashboard</h1>{% endblock %}
+
+{% block content %}
+<script>
+  $(document).ready(function() {
+      $('form input[type="submit"][value="Delete"]')
+          .replaceWith('<span class="glyphicon glyphicon-remove-circle"></span>');
+
+      $('span.glyphicon-remove-circle').on('click', function() {
+          $(this).closest('form').submit();
+      });
+  });
+</script>
+
+{% for rf in racefiles %}
+<div class="row">
+<div class="panel panel-default">
+
+<div class="row">
+
+<div class="col-md-6">
+<b>{{ rf.userrace }}</b>
+
+<form class="form-inline" method="post" action="{% url 'userrace_update' pk=rf.userrace.pk %}">
+  {% csrf_token %}
+  <div class="form-group">
+  <input class="form-control" id="id_identifier_{{ rf.userrace.pk }}" type="text" value="{{ rf.userrace }}"
+  name="identifier" maxlength="64" />
+  </div>
+  <div class="form-group"><input type="submit" value="Update" /></div>
+</form>
+</div>
+
+<div class="col-md-1">
+{% if rf.userrace.racefile %}
+<a href="{% url 'userrace_download' pk=rf.userrace.pk %}">
+<span class="glyphicon glyphicon-download"></span></a>
+{% endif %}
+</div>
+
+<div class="col-md-4">
+<!-- <span class="glyphicon glyphicon-upload"></span> -->
+<form class="form-inline" method="post" action="{% url 'userrace_upload' pk=rf.userrace.pk %}">
+  {% csrf_token %}
+  <div class="form-group">
+  <input class="form-control" id="id_file_{{ rf.userrace.pk }}" type="file" name="file" />
+  </div>
+</form>
+</div>
+
+<div class="col-md-1">
+<form class="form-inline" method="post" action="{% url 'userrace_delete' pk=rf.userrace.pk %}">
+  {% csrf_token %}
+  <input class="form-control" type="submit" value="Delete" />
+</form>
+</div>
+</div>
+
+</div>
+</div>
+{% endfor %}
+
+{% endblock %}

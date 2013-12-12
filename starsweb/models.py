@@ -124,7 +124,7 @@ class UserRace(models.Model):
         unique_together = ('user', 'identifier')
 
     def __unicode__(self):
-        return u'{0}: {1}'.format(self.user, self.identifier)
+        return self.identifier
 
 
 class GameRace(models.Model):
