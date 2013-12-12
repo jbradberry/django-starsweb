@@ -194,6 +194,10 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
 
     slug_url_kwarg = 'race_slug'
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RaceUpdateView, self).dispatch(*args, **kwargs)
+
     def get_success_url(self):
         return self.game.get_absolute_url()
 
@@ -219,9 +223,42 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
             return HttpResponseForbidden("Game is no longer in setup.")
         return super(RaceUpdateView, self).post(request, *args, **kwargs)
 
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(RaceUpdateView, self).dispatch(*args, **kwargs)
+    def form_valid(self, form):
+        racefile = form.instance.racefile
+
+        if racefile:
+            sf = base.StarsFile()
+            try:
+                racefile.file.open()
+                data = racefile.file.read()
+                sf.bytes = data
+            finally:
+                racefile.file.close()
+
+            race_struct = sf.structs[1]
+            name = race_struct.race_name
+            plural_name = race_struct.plural_race_name
+            altered = False
+
+            if (name != form.instance.name or
+                plural_name != form.instance.plural_name):
+                messages.info(
+                    self.request,
+                    "The attached race file's name or plural name has been"
+                    " adjusted to match your race's name and plural name."
+                )
+                altered = True
+
+            if altered:
+                race_struct.race_name = form.instance.name
+                race_struct.plural_race_name = form.instance.plural_name
+
+                racefile.file.save('', ContentFile(sf.bytes))
+
+        messages.success(
+            self.request,
+            "The race name and plural name have successfully been changed.")
+        return super(RaceUpdateView, self).form_valid(form)
 
 
 class AmbassadorUpdateView(ParentRaceMixin, UpdateView):

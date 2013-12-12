@@ -377,54 +377,49 @@ class RaceUpdateViewTestCase(TestCase):
             description="This *game* is foobared.",
         )
         self.game.save()
-        race = models.Race(game=self.game,
-                           name='Gestalti',
-                           plural_name='Gestalti',
-                           slug='gestalti')
-        race.save()
-        self.ambassador = models.Ambassador(race=race,
+        self.race = models.Race(game=self.game,
+                                name='Gestalti',
+                                plural_name='Gestalti',
+                                slug='gestalti')
+        self.race.save()
+        self.ambassador = models.Ambassador(race=self.race,
                                             user=self.user,
                                             name="KonTiki")
         self.ambassador.save()
+        self.update_url = reverse('race_update',
+                                  kwargs={'game_slug': 'total-war-in-ulfland',
+                                          'race_slug': 'gestalti'})
 
-    def test_view_form(self):
+    def test_authorized(self):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Gestalti")
 
-    def test_successful_update(self):
-        self.assertEqual(models.Race.objects.count(), 1)
-        self.assertEqual(models.Ambassador.objects.count(), 1)
-
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Gestalti2',
                                      'plural_name': 'Gestalti'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "The Gestalti")
         self.assertContains(response, "KonTiki")
+        self.assertContains(
+            response,
+            "The race name and plural name have successfully been changed.")
 
         self.assertEqual(models.Race.objects.count(), 1)
-        self.assertEqual(models.Race.objects.get().slug, "gestalti")
+        race = models.Race.objects.get()
+        self.assertEqual(race.slug, "gestalti")
+        self.assertEqual(race.name, "Gestalti2")
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
     def test_slug_change(self):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Histalti',
                                      'plural_name': 'Histalti'},
                                     follow=True)
@@ -432,22 +427,58 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertContains(response, "The Histalti")
         self.assertNotContains(response, "The Gestalti")
         self.assertContains(response, "KonTiki")
+        self.assertContains(
+            response,
+            "The race name and plural name have successfully been changed.")
 
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Race.objects.get().slug, "histalti")
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
+    def test_change_to_racefile(self):
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        starsfile = models.StarsFile(upload_user=self.user, type='r')
+        starsfile.save()
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            starsfile.file.save('foo.r1', File(f))
+
+        self.race.racefile = starsfile
+        self.race.save()
+
+        response = self.client.post(self.update_url,
+                                    {'name': 'Gestalti2',
+                                     'plural_name': 'Gestalti'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(
+            response,
+            escape("The attached race file's name or plural name has been"
+                   " adjusted to match your race's name and plural name.")
+        )
+        self.assertContains(
+            response,
+            "The race name and plural name have successfully been changed.")
+
+        starsfile = models.StarsFile.objects.get()
+        with open(starsfile.file.path) as f:
+            new_file = f.read()
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            old_file = f.read()
+
+        self.assertNotEqual(new_file, old_file,
+                            msg="File contents unexpectedly equal.")
+
     def test_game_active(self):
         self.game.state = 'A'
         self.game.save()
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Histalti',
                                      'plural_name': 'Histalti'},
                                     follow=True)
@@ -460,13 +491,10 @@ class RaceUpdateViewTestCase(TestCase):
         self.game.state = 'P'
         self.game.save()
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Histalti',
                                      'plural_name': 'Histalti'},
                                     follow=True)
@@ -479,13 +507,10 @@ class RaceUpdateViewTestCase(TestCase):
         self.game.state = 'F'
         self.game.save()
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Histalti',
                                      'plural_name': 'Histalti'},
                                     follow=True)
@@ -498,10 +523,7 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'A'*16,
                                      'plural_name': 'Gestalti'})
         self.assertEqual(response.status_code, 200)
@@ -515,10 +537,7 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': u'\u2603',
                                      'plural_name': 'Gestalti'})
         self.assertEqual(response.status_code, 200)
@@ -535,22 +554,19 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   update_url))
+                                                   self.update_url))
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Histalti',
                                      'plural_name': 'Histalti'})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   update_url))
+                                                   self.update_url))
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Race.objects.get().name, "Gestalti")
 
@@ -560,13 +576,10 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Histalti',
                                      'plural_name': 'Histalti'})
         self.assertEqual(response.status_code, 403)
@@ -581,13 +594,10 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('race_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Histalti',
                                      'plural_name': 'Histalti'})
         self.assertEqual(response.status_code, 403)
