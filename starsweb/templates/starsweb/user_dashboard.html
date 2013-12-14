@@ -6,7 +6,9 @@
 
 {% block content %}
 
-{% for rf in racefiles %}
+<h2>Race Pool</h2>
+
+{% for rf in userraces %}
 <div class="row">
 <div class="panel panel-default">
 
@@ -29,4 +31,22 @@
 </div>
 </div>
 {% endfor %}
+
+<h2>Game Races</h2>
+
+{% for rf in gameraces %}
+<div class="row">
+<div class="panel panel-default">
+
+<div class="panel-body">
+<span class="lead">{{ rf }}</span>
+
+<a href="{% url 'race_download' game_slug=rf.race.game.slug race_slug=rf.race.slug %}">
+<span class="glyphicon glyphicon-download"></span></a>
+</div>
+
+</div>
+</div>
+{% endfor %}
+
 {% endblock %}

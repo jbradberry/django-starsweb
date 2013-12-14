@@ -386,7 +386,10 @@ class UserDashboard(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = {
-            'racefiles': models.UserRace.objects.filter(user=self.request.user),
+            'userraces': models.UserRace.objects.filter(
+                user=self.request.user),
+            'gameraces': models.GameRace.objects.filter(
+                race__ambassadors__user=self.request.user),
             'new_form': forms.UserRaceForm(),
             'upload_form': forms.RaceFileForm()
         }
