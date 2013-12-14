@@ -5,16 +5,6 @@
 {% block header %}<h1>User Dashboard</h1>{% endblock %}
 
 {% block content %}
-<script>
-  $(document).ready(function() {
-      $('form input[type="submit"][value="Delete"]')
-          .replaceWith('<span class="glyphicon glyphicon-remove-circle"></span>');
-
-      $('span.glyphicon-remove-circle').on('click', function() {
-          $(this).closest('form').submit();
-      });
-  });
-</script>
 
 {% for rf in racefiles %}
 <div class="row">
@@ -64,4 +54,17 @@
 </div>
 {% endfor %}
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  $(document).ready(function() {
+      $('form input[type="submit"][value="Delete"]')
+          .replaceWith('<span class="glyphicon glyphicon-remove-circle"></span>');
+
+      $('span.glyphicon-remove-circle').on('click', function() {
+          $(this).closest('form').submit();
+      });
+  });
+</script>
 {% endblock %}

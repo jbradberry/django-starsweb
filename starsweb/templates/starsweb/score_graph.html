@@ -3,7 +3,6 @@
 {% block title %}{{ game.name }} | Games | {{ block.super }}{% endblock %}
 
 {% block extra_head %}
-<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <style>
   .axis path,
   .axis line {
@@ -35,7 +34,10 @@
 <div class="row">
   <div id="graph"></div>
 </div>
+{% endblock %}
 
+{% block extra_scripts %}
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script>
 var scores = {{ scores|safe }};
 var races = {{ races|safe }};
@@ -134,5 +136,4 @@ legend.append("text")
       .text(function(d) { return d; });
 
 </script>
-
 {% endblock %}
