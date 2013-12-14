@@ -385,14 +385,11 @@ class UserDashboard(TemplateView):
         return super(UserDashboard, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        racefiles = [
-            {'userrace': ur,
-             'update_form': forms.UserRaceForm(instance=ur)}
-            for ur in models.UserRace.objects.filter(user=self.request.user)
-        ]
-        context = {'racefiles': racefiles,
-                   'new_form': forms.UserRaceForm(),
-                   'upload_form': forms.RaceFileForm()}
+        context = {
+            'racefiles': models.UserRace.objects.filter(user=self.request.user),
+            'new_form': forms.UserRaceForm(),
+            'upload_form': forms.RaceFileForm()
+        }
         context.update(kwargs)
         return super(UserDashboard, self).get_context_data(**context)
 
