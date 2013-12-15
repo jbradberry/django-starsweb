@@ -141,6 +141,10 @@ class GameAdminView(ParentGameMixin, UpdateView):
     model = models.GameOptions
     form_class = forms.GameOptionsForm
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(GameAdminView, self).dispatch(*args, **kwargs)
+
     def get_success_url(self):
         return reverse_lazy('game_admin', kwargs={'game_slug': self.game.slug})
 
@@ -152,10 +156,16 @@ class GameAdminView(ParentGameMixin, UpdateView):
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
+        if self.game.host != self.request.user:
+            return HttpResponseForbidden(
+                "You do not have permission to configure this game.")
         return super(GameAdminView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
+        if self.game.host != self.request.user:
+            return HttpResponseForbidden(
+                "You do not have permission to configure this game.")
         return super(GameAdminView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form):
