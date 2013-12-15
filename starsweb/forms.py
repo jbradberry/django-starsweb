@@ -92,7 +92,8 @@ class ChooseUserRaceForm(forms.ModelForm):
             (u'', self.fields['racefile'].empty_label)
         ] + [
             (u.racefile.id, u.identifier)
-            for u in models.UserRace.objects.filter(user=user)
+            for u in models.UserRace.objects.filter(user=user,
+                                                    racefile__isnull=False)
         ]
 
 

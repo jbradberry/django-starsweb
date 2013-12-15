@@ -918,6 +918,67 @@ class RaceDashboardViewTestCase(TestCase):
         self.assertNotContains(response, reverse('race_bind',
                                                  kwargs=self.url_kwargs))
 
+    def test_userrace_with_no_racefile(self):
+        userrace = self.user.racepool.create(identifier="Gestalti v1")
+        self.assertFalse(models.UserRace.objects.filter(racefile__isnull=False))
+
+        try:
+            response = self.client.get(self.dashboard_url)
+        except Exception as e:
+            self.fail(e)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('race_form', response.context)
+        self.assertIn('ambassador_form', response.context)
+        self.assertIn('raceupload_form', response.context)
+        self.assertIn('racechoose_form', response.context)
+
+        self.assertContains(response, reverse('race_update',
+                                              kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('ambassador_update',
+                                              kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_download',
+                                                 kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('race_upload',
+                                              kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('race_bind',
+                                              kwargs=self.url_kwargs))
+        self.assertNotContains(response, "Gestalti v1")
+
+    def test_userrace_with_racefile(self):
+        userrace = self.user.racepool.create(identifier="Gestalti v1")
+        starsfile = models.StarsFile(upload_user=self.user, type='r')
+        starsfile.save()
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            starsfile.file.save('foo.r1', File(f))
+        userrace.racefile = starsfile
+        userrace.save()
+
+        self.assertTrue(models.UserRace.objects.filter(racefile__isnull=False))
+
+        try:
+            response = self.client.get(self.dashboard_url)
+        except Exception as e:
+            self.fail(e)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('race_form', response.context)
+        self.assertIn('ambassador_form', response.context)
+        self.assertIn('raceupload_form', response.context)
+        self.assertIn('racechoose_form', response.context)
+
+        self.assertContains(response, reverse('race_update',
+                                              kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('ambassador_update',
+                                              kwargs=self.url_kwargs))
+        self.assertNotContains(response, reverse('race_download',
+                                                 kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('race_upload',
+                                              kwargs=self.url_kwargs))
+        self.assertContains(response, reverse('race_bind',
+                                              kwargs=self.url_kwargs))
+        self.assertContains(response, "Gestalti v1")
+
     def test_game_does_not_exist(self):
         dashboard_url = reverse('race_dashboard',
                                 kwargs={'game_slug': '500-years-after',
@@ -1273,6 +1334,19 @@ class RaceFileBindTestCase(TestCase):
 
         race = models.Race.objects.get()
         self.assertIsNone(race.racefile)
+
+    def test_userrace_without_racefile(self):
+        self.userrace.racefile = None
+        self.userrace.save()
+
+        try:
+            response = self.client.get(self.bind_url)
+        except Exception as e:
+            self.fail(e)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+        self.assertNotContains(response, "Gestalti v1")
 
     def test_name_change(self):
         race = models.Race.objects.get()
