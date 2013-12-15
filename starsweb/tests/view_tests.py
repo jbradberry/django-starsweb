@@ -1119,6 +1119,130 @@ class RaceDashboardViewTestCase(TestCase):
                                                    self.dashboard_url))
 
 
+class UserDashboardTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.starsfile1 = models.StarsFile(upload_user=self.user,
+                                           type='r')
+        self.starsfile1.save()
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            self.starsfile1.file.save('foo.r1', File(f))
+
+        self.starsfile2 = models.StarsFile(upload_user=self.user,
+                                           type='r')
+        self.starsfile2.save()
+        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+            self.starsfile2.file.save('foo.r1', File(f))
+
+        self.userrace1 = models.UserRace(user=self.user,
+                                         identifier="Gestalti v1",
+                                         racefile=self.starsfile1)
+        self.userrace1.save()
+
+        self.userrace2 = models.UserRace(user=self.user,
+                                         identifier="SSG v1",
+                                         racefile=self.starsfile2)
+        self.userrace2.save()
+
+        self.game = models.Game(
+            name="Total War in Ulfland",
+            slug="total-war-in-ulfland",
+            host=self.user,
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+        self.race = models.Race(game=self.game,
+                                name='Gestalti',
+                                plural_name='Gestalti',
+                                slug='gestalti')
+        self.race.save()
+        self.ambassador = models.Ambassador(race=self.race,
+                                            user=self.user,
+                                            name="KonTiki")
+        self.ambassador.save()
+        self.gamerace = models.GameRace(race=self.race,
+                                        racefile=self.starsfile1)
+        self.gamerace.save()
+
+        self.dashboard_url = reverse('user_dashboard')
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
+    def test_authorized(self):
+        response = self.client.get(self.dashboard_url)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, "Gestalti v1")
+        self.assertContains(response, "SSG v1")
+        self.assertIn('userraces', response.context)
+        self.assertIn('gameraces', response.context)
+        self.assertEqual(len(response.context['userraces']), 2)
+        self.assertEqual(len(response.context['gameraces']), 1)
+
+        self.assertContains(
+            response,
+            reverse('race_download',
+                    kwargs={'game_slug': self.game.slug,
+                            'race_slug': self.race.slug}))
+
+        self.assertContains(
+            response,
+            reverse('userrace_download',
+                    kwargs={'pk': self.userrace1.pk}))
+
+        self.assertContains(
+            response,
+            reverse('userrace_download',
+                    kwargs={'pk': self.userrace2.pk}))
+
+    def test_userrace_without_file(self):
+        self.userrace2.racefile = None
+        self.userrace2.save()
+
+        try:
+            response = self.client.get(self.dashboard_url)
+        except Exception as e:
+            self.fail(e)
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, "Gestalti v1")
+        self.assertContains(response, "SSG v1")
+        self.assertIn('userraces', response.context)
+        self.assertIn('gameraces', response.context)
+        self.assertEqual(len(response.context['userraces']), 2)
+        self.assertEqual(len(response.context['gameraces']), 1)
+
+        self.assertContains(
+            response,
+            reverse('race_download',
+                    kwargs={'game_slug': self.game.slug,
+                            'race_slug': self.race.slug}))
+
+        self.assertContains(
+            response,
+            reverse('userrace_download',
+                    kwargs={'pk': self.userrace1.pk}))
+
+        self.assertNotContains(
+            response,
+            reverse('userrace_download',
+                    kwargs={'pk': self.userrace2.pk}))
+
+    def test_anonymous(self):
+        self.client.logout()
+
+        response = self.client.get(self.dashboard_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.dashboard_url))
+
+
 class UserRaceCreateTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')
