@@ -293,16 +293,18 @@ class GameJoinViewTestCase(TestCase):
         )
         self.game.save()
 
+        self.join_url = reverse('game_join',
+                                kwargs={'game_slug': self.game.slug})
+
     def test_join_game(self):
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
 
-        join_url = reverse('game_join', kwargs={'game_slug': self.game.slug})
-        response = self.client.get(join_url)
+        response = self.client.get(self.join_url)
         self.assertEqual(response.status_code, 200)
 
         response = self.client.post(
-            join_url,
+            self.join_url,
             {'name': "Gestalti",
              'plural_name': "Gestalti",
              'ambassador-name': "KonTiki"}
@@ -326,36 +328,72 @@ class GameJoinViewTestCase(TestCase):
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
 
-        join_url = reverse('game_join', kwargs={'game_slug': self.game.slug})
-        response = self.client.get(join_url)
+        response = self.client.get(self.join_url)
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   join_url))
+                                                   self.join_url))
 
         response = self.client.post(
-            join_url,
+            self.join_url,
             {'name': "Gestalti",
              'plural_name': "Gestalti",
              'ambassador-name': "KonTiki"}
         )
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   join_url))
+                                                   self.join_url))
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
 
-    def test_game_not_in_setup(self):
+    def test_game_active(self):
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
         self.game.state = 'A'
         self.game.save()
 
-        join_url = reverse('game_join', kwargs={'game_slug': self.game.slug})
-        response = self.client.get(join_url)
+        response = self.client.get(self.join_url)
         self.assertEqual(response.status_code, 403)
 
         response = self.client.post(
-            join_url,
+            self.join_url,
+            {'name': "Gestalti",
+             'plural_name': "Gestalti",
+             'ambassador-name': "KonTiki"}
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(models.Race.objects.exists())
+        self.assertFalse(models.Ambassador.objects.exists())
+
+    def test_game_paused(self):
+        self.assertFalse(models.Race.objects.exists())
+        self.assertFalse(models.Ambassador.objects.exists())
+        self.game.state = 'P'
+        self.game.save()
+
+        response = self.client.get(self.join_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(
+            self.join_url,
+            {'name': "Gestalti",
+             'plural_name': "Gestalti",
+             'ambassador-name': "KonTiki"}
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(models.Race.objects.exists())
+        self.assertFalse(models.Ambassador.objects.exists())
+
+    def test_game_finished(self):
+        self.assertFalse(models.Race.objects.exists())
+        self.assertFalse(models.Ambassador.objects.exists())
+        self.game.state = 'F'
+        self.game.save()
+
+        response = self.client.get(self.join_url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(
+            self.join_url,
             {'name': "Gestalti",
              'plural_name': "Gestalti",
              'ambassador-name': "KonTiki"}
@@ -411,6 +449,14 @@ class RaceUpdateViewTestCase(TestCase):
 
         self.assertEqual(models.Race.objects.count(), 1)
         race = models.Race.objects.get()
+
+        self.assertIsNone(race.racefile)
+        self.assertNotContains(
+            response,
+            escape("The attached race file's name or plural name has been"
+                   " adjusted to match your race's name and plural name.")
+        )
+
         self.assertEqual(race.slug, "gestalti")
         self.assertEqual(race.name, "Gestalti2")
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -649,25 +695,61 @@ class AmbassadorUpdateViewTestCase(TestCase):
                                             name="KonTiki")
         self.ambassador.save()
 
-    def test_view_form(self):
+        self.update_url = reverse('ambassador_update',
+                                  kwargs={'game_slug': 'total-war-in-ulfland',
+                                          'race_slug': 'gestalti'})
+
+    def test_authorized(self):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('ambassador_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "KonTiki")
 
-    def test_successful_update(self):
+        response = self.client.post(self.update_url,
+                                    {'name': 'Kon-Tiki'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The Gestalti")
+        self.assertContains(response, "Kon-Tiki")
+        self.assertNotContains(response, "KonTiki")
+
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('ambassador_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.post(update_url,
+    def test_game_active(self):
+        self.game.state = 'A'
+        self.game.save()
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        response = self.client.get(self.update_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "KonTiki")
+
+        response = self.client.post(self.update_url,
+                                    {'name': 'Kon-Tiki'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The Gestalti")
+        self.assertContains(response, "Kon-Tiki")
+        self.assertNotContains(response, "KonTiki")
+
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+    def test_game_paused(self):
+        self.game.state = 'P'
+        self.game.save()
+        self.assertEqual(models.Race.objects.count(), 1)
+        self.assertEqual(models.Ambassador.objects.count(), 1)
+
+        response = self.client.get(self.update_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "KonTiki")
+
+        response = self.client.post(self.update_url,
                                     {'name': 'Kon-Tiki'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
@@ -684,13 +766,10 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('ambassador_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Kon-Tiki'},
                                     follow=True)
         self.assertEqual(response.status_code, 403)
@@ -703,10 +782,7 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('ambassador_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'a'*129})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ensure this value has at most 128 characters")
@@ -718,21 +794,18 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('ambassador_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   update_url))
+                                                   self.update_url))
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Kon-Tiki'})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   update_url))
+                                                   self.update_url))
         self.assertEqual(models.Ambassador.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.get().name, "KonTiki")
 
@@ -742,13 +815,10 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('ambassador_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Kon-Tiki'})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -760,13 +830,10 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
-        update_url = reverse('ambassador_update',
-                             kwargs={'game_slug': 'total-war-in-ulfland',
-                                     'race_slug': 'gestalti'})
-        response = self.client.get(update_url)
+        response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.post(update_url,
+        response = self.client.post(self.update_url,
                                     {'name': 'Kon-Tiki'})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -842,7 +909,7 @@ class RaceDashboardViewTestCase(TestCase):
 
         self.assertContains(response, "<b>Player Number:</b> N/A")
 
-    def test_active_state(self):
+    def test_game_active(self):
         self.game.state = 'A'
         self.game.save()
         self.race.player_number = 0
@@ -870,7 +937,7 @@ class RaceDashboardViewTestCase(TestCase):
 
         self.assertContains(response, "<b>Player Number:</b> 1")
 
-    def test_paused_state(self):
+    def test_game_paused(self):
         self.game.state = 'P'
         self.game.save()
 
@@ -894,7 +961,7 @@ class RaceDashboardViewTestCase(TestCase):
         self.assertNotContains(response, reverse('race_bind',
                                                  kwargs=self.url_kwargs))
 
-    def test_finished_state(self):
+    def test_game_finished(self):
         self.game.state = 'F'
         self.game.save()
 
@@ -1461,7 +1528,7 @@ class RaceFileBindTestCase(TestCase):
 
         self.assertIsNone(self.race.racefile)
 
-    def test_active_state(self):
+    def test_game_active(self):
         self.assertIsNone(self.race.racefile)
 
         self.game.state = 'A'
@@ -1476,7 +1543,7 @@ class RaceFileBindTestCase(TestCase):
 
         self.assertIsNone(self.race.racefile)
 
-    def test_paused_state(self):
+    def test_game_paused(self):
         self.assertIsNone(self.race.racefile)
 
         self.game.state = 'P'
@@ -1491,7 +1558,7 @@ class RaceFileBindTestCase(TestCase):
 
         self.assertIsNone(self.race.racefile)
 
-    def test_finished_state(self):
+    def test_game_finished(self):
         self.assertIsNone(self.race.racefile)
 
         self.game.state = 'F'
