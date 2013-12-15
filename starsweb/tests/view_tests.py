@@ -6,7 +6,7 @@ from django.utils.html import escape
 from django.test import TestCase
 from django.conf import settings
 
-import os.path
+import os
 
 from .. import models
 
@@ -509,6 +509,8 @@ class RaceUpdateViewTestCase(TestCase):
         self.race.racefile = starsfile
         self.race.save()
 
+        old_path = starsfile.file.path
+
         response = self.client.post(self.update_url,
                                     {'name': 'Gestalti2',
                                      'plural_name': 'Gestalti'},
@@ -525,13 +527,22 @@ class RaceUpdateViewTestCase(TestCase):
             "The race name and plural name have successfully been changed.")
 
         starsfile = models.StarsFile.objects.get()
-        with open(starsfile.file.path) as f:
+        new_path = starsfile.file.path
+        with open(new_path) as f:
             new_file = f.read()
         with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
             old_file = f.read()
 
         self.assertNotEqual(new_file, old_file,
                             msg="File contents unexpectedly equal.")
+        self.assertNotEqual(new_path, old_path)
+
+        # this is less than ideal, but we don't want extra files
+        # accumulating
+        try:
+            os.remove(old_path)
+        except Exception:
+            pass
 
     def test_game_active(self):
         self.game.state = 'A'
