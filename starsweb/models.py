@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.template.defaultfilters import slugify
 from django.core.urlresolvers import reverse
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.db import models
 from operator import attrgetter
@@ -56,6 +57,96 @@ class Game(models.Model):
     def current_turn(self):
         if self.turns.exists():
             return self.turns.latest()
+
+
+class GameOptions(models.Model):
+    SIZE_CHOICES = ((0, 'Tiny'),
+                    (1, 'Small'),
+                    (2, 'Medium'),
+                    (3, 'Large'),
+                    (4, 'Huge'))
+
+    DENSITY_CHOICES = ((0, 'Sparse'),
+                       (1, 'Normal'),
+                       (2, 'Dense'),
+                       (3, 'Packed'))
+
+    DISTANCE_CHOICES = ((0, 'Close'),
+                        (1, 'Moderate'),
+                        (2, 'Farther'),
+                        (3, 'Distant'))
+
+    AI_RACES = ((0, 'Random'),
+                (1, 'Robotoids'),
+                (2, 'Turindrones'),
+                (3, 'Automitrons'),
+                (4, 'Rototills'),
+                (5, 'Cybertrons'),
+                (6, 'Macinti'))
+
+    AI_SKILL_LEVELS = ((0, 'Random'),
+                       (1, 'Easy'),
+                       (2, 'Standard'),
+                       (3, 'Tough'),
+                       (4, 'Expert'))
+
+    game = models.OneToOneField(Game, related_name='options')
+
+    universe_size = models.PositiveSmallIntegerField(
+        choices=SIZE_CHOICES, default=1)
+    universe_density = models.PositiveSmallIntegerField(
+        choices=DENSITY_CHOICES, default=1)
+    starting_distance = models.PositiveSmallIntegerField(
+        choices=DISTANCE_CHOICES, default=1)
+
+    maximum_minerals = models.BooleanField(default=False, blank=True)
+    slow_tech = models.BooleanField(default=False, blank=True)
+    accelerated_bbs = models.BooleanField(default=False, blank=True)
+    random_events = models.BooleanField(default=True, blank=True)
+    computer_alliances = models.BooleanField(default=False, blank=True)
+    public_scores = models.BooleanField(default=False, blank=True)
+    galaxy_clumping = models.BooleanField(default=False, blank=True)
+
+    ai_players = models.CommaSeparatedIntegerField(max_length=64, blank=True)
+
+    percent_planets = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(20), MaxValueValidator(100)])
+
+    tech_level = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(8), MaxValueValidator(26)])
+    tech_fields = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(2), MaxValueValidator(6)])
+
+    score = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(1000), MaxValueValidator(20000)])
+
+    exceeds_nearest_score = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(20), MaxValueValidator(300)])
+
+    production = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(10), MaxValueValidator(500)])
+
+    capital_ships = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(10), MaxValueValidator(300)])
+
+    highest_score_after_years = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(30), MaxValueValidator(900)])
+
+    num_criteria = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(7)])
+
+    min_turns_to_win = models.IntegerField(
+        validators=[MinValueValidator(30), MaxValueValidator(500)])
+
+    file_contents = models.TextField(blank=True)
 
 
 def starsfile_path(instance, filename):
