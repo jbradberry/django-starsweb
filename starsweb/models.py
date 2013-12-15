@@ -141,9 +141,11 @@ class GameOptions(models.Model):
         validators=[MinValueValidator(30), MaxValueValidator(900)])
 
     num_criteria = models.IntegerField(
+        default=1,
         validators=[MinValueValidator(0), MaxValueValidator(7)])
 
     min_turns_to_win = models.IntegerField(
+        default=50,
         validators=[MinValueValidator(30), MaxValueValidator(500)])
 
     file_contents = models.TextField(blank=True)

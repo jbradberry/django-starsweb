@@ -1,4 +1,5 @@
 from django.template.defaultfilters import slugify
+from django.db.models import BLANK_CHOICE_DASH
 from django.conf import settings
 from django import forms
 
@@ -11,6 +12,55 @@ class CreateGameForm(forms.ModelForm):
     class Meta:
         model = models.Game
         exclude = ('description_html', 'host', 'created', 'state')
+
+
+class AiPlayersWidget(forms.MultiWidget):
+    def __init__(self, attrs=None):
+        _widgets = [
+            forms.Select(attrs=attrs,
+                         choices=BLANK_CHOICE_DASH + list(w))
+            for x in xrange(16)
+            for w in (models.GameOptions.AI_RACES,
+                      models.GameOptions.AI_SKILL_LEVELS)
+        ]
+        return super(AiPlayersWidget, self).__init__(_widgets, attrs)
+
+    def decompress(self, value):
+        new_value = [None for x in xrange(32)]
+        if value:
+            values = [int(x.strip()) for x in value.split(',')]
+            L = len(values) // 2 * 2
+            new_value[:L] = values[:L]
+        return new_value
+
+
+class AiPlayers(forms.MultiValueField):
+    widget = AiPlayersWidget
+
+    def __init__(self, *args, **kwargs):
+        fields = [
+            forms.ChoiceField(choices=BLANK_CHOICE_DASH + list(w),
+                              required=False)
+            for x in xrange(16)
+            for w in (models.GameOptions.AI_RACES,
+                      models.GameOptions.AI_SKILL_LEVELS)
+        ]
+        super(AiPlayers, self).__init__(fields, *args, **kwargs)
+
+    def compress(self, data_list):
+        values = []
+        for race, skill in zip(*[iter(data_list)]*2):
+            if race and skill:
+                values.extend([race, skill])
+        return ','.join(values)
+
+
+class GameOptionsForm(forms.ModelForm):
+    ai_players = AiPlayers(required=False)
+
+    class Meta:
+        model = models.GameOptions
+        exclude = ('game', 'file_contents')
 
 
 class RaceForm(forms.ModelForm):

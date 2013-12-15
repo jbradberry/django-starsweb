@@ -137,6 +137,33 @@ class ParentRaceMixin(ParentGameMixin):
         return super(ParentRaceMixin, self).get_context_data(**context)
 
 
+class GameAdminView(ParentGameMixin, UpdateView):
+    model = models.GameOptions
+    form_class = forms.GameOptionsForm
+
+    def get_success_url(self):
+        return reverse_lazy('game_admin', kwargs={'game_slug': self.game.slug})
+
+    def get_object(self):
+        try:
+            return self.game.options
+        except models.GameOptions.DoesNotExist:
+            return None
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        return super(GameAdminView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        return super(GameAdminView, self).post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.game = self.game
+        messages.success(self.request, "Game configuration successfully saved.")
+        return super(GameAdminView, self).form_valid(form)
+
+
 class GameJoinView(ParentGameMixin, CreateView):
     template_name = 'starsweb/game_join_form.html'
 
