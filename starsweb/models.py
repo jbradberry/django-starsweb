@@ -131,6 +131,9 @@ class GameRace(models.Model):
     race = models.ForeignKey(Race, unique=True, related_name='official')
     racefile = models.ForeignKey(StarsFile)
 
+    def __unicode__(self):
+        return unicode(self.race)
+
 
 class Ambassador(models.Model):
     race = models.ForeignKey(Race, related_name='ambassadors')
