@@ -44,6 +44,10 @@ class GameDetailViewTestCase(TestCase):
         self.detail_url = reverse('game_detail',
                                   kwargs={'slug': self.game.slug})
 
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
     def test_no_scores(self):
         response = self.client.get(self.detail_url)
         self.assertContains(response, "Total War in Ulfland")
@@ -184,6 +188,10 @@ class GameCreateViewTestCase(TestCase):
         self.user = User.objects.create_user(username='admin', password='password')
         self.client.login(username='admin', password='password')
 
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
     def test_create_new_game(self):
         self.user.is_superuser = True
         self.user.save()
@@ -295,6 +303,10 @@ class GameJoinViewTestCase(TestCase):
 
         self.join_url = reverse('game_join',
                                 kwargs={'game_slug': self.game.slug})
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
 
     def test_join_game(self):
         self.assertFalse(models.Race.objects.exists())
@@ -427,6 +439,10 @@ class RaceUpdateViewTestCase(TestCase):
         self.update_url = reverse('race_update',
                                   kwargs={'game_slug': 'total-war-in-ulfland',
                                           'race_slug': 'gestalti'})
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
 
     def test_authorized(self):
         self.assertEqual(models.Race.objects.count(), 1)
@@ -699,6 +715,10 @@ class AmbassadorUpdateViewTestCase(TestCase):
                                   kwargs={'game_slug': 'total-war-in-ulfland',
                                           'race_slug': 'gestalti'})
 
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
     def test_authorized(self):
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -885,6 +905,10 @@ class RaceDashboardViewTestCase(TestCase):
                            'race_slug': 'gestalti'}
         self.dashboard_url = reverse('race_dashboard',
                                      kwargs=self.url_kwargs)
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
 
     def test_setup_state(self):
         self.assertEqual(self.game.state, 'S')
@@ -1091,6 +1115,10 @@ class UserRaceCreateTestCase(TestCase):
 
         self.create_url = reverse('userrace_create')
 
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
     def test_success(self):
         self.assertEqual(models.UserRace.objects.count(), 0)
 
@@ -1154,6 +1182,10 @@ class UserRaceUpdateTestCase(TestCase):
 
         self.update_url = reverse('userrace_update',
                                   kwargs={'pk': self.userrace.pk})
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
 
     def test_success(self):
         self.assertEqual(models.UserRace.objects.count(), 1)
@@ -1255,6 +1287,10 @@ class UserRaceDeleteTestCase(TestCase):
 
         self.delete_url = reverse('userrace_delete',
                                   kwargs={'pk': self.userrace.pk})
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
 
     def test_success(self):
         self.assertEqual(models.UserRace.objects.count(), 1)
