@@ -99,13 +99,39 @@ class GameOptions(models.Model):
     starting_distance = models.PositiveSmallIntegerField(
         choices=DISTANCE_CHOICES, default=1)
 
-    maximum_minerals = models.BooleanField(default=False, blank=True)
-    slow_tech = models.BooleanField(default=False, blank=True)
-    accelerated_bbs = models.BooleanField(default=False, blank=True)
-    random_events = models.BooleanField(default=True, blank=True)
-    computer_alliances = models.BooleanField(default=False, blank=True)
-    public_scores = models.BooleanField(default=False, blank=True)
-    galaxy_clumping = models.BooleanField(default=False, blank=True)
+    maximum_minerals = models.BooleanField(
+        default=False, blank=True,
+        help_text="All planets start with a mineral concentration of 100."
+        " Not recommended for experienced players."
+    )
+    slow_tech = models.BooleanField(
+        default=False, blank=True,
+        help_text="Research will be twice as expensive."
+    )
+    accelerated_bbs = models.BooleanField(
+        default=False, blank=True,
+        help_text="Players start with 4 times the normal population,"
+        " and planets have 20% more minerals."
+    )
+    random_events = models.BooleanField(
+        default=True, blank=True,
+        help_text="Allow random occurrences such as Mystery Traders,"
+        " comets, and wormholes."
+    )
+    computer_alliances = models.BooleanField(
+        default=False, blank=True,
+        help_text="Computer players will prefer to attack human players"
+        " instead of each other."
+    )
+    public_scores = models.BooleanField(
+        default=True, blank=True,
+        help_text="All player's scores will be displayed in the score"
+        " sheet after the first 20 turns."
+    )
+    galaxy_clumping = models.BooleanField(
+        default=False, blank=True,
+        help_text="Causes star systems to clump together."
+    )
 
     ai_players = models.CommaSeparatedIntegerField(max_length=64, blank=True)
 
