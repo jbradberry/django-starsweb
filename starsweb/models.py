@@ -10,6 +10,31 @@ import uuid
 from . import markup
 
 
+def starsfile_path(instance, filename):
+    return '{type}/{year}/{month}/{day}/{uuid}'.format(
+        type=instance.get_type_display(),
+        year=instance.timestamp.year,
+        month=instance.timestamp.month,
+        day=instance.timestamp.day,
+        uuid=uuid.uuid4()
+    )
+
+
+class StarsFile(models.Model):
+    STARS_TYPES = (('r', 'race'),
+                   ('xy', 'map'),
+                   ('m', 'state'),
+                   ('x', 'orders'),
+                   ('h', 'history'),
+                   ('hst', 'host'))
+
+    upload_user = models.ForeignKey('auth.User', null=True,
+                                    related_name='starsfiles')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    type = models.CharField(max_length=3, choices=STARS_TYPES)
+    file = models.FileField(upload_to=starsfile_path)
+
+
 class Game(models.Model):
     STATE_CHOICES = (
         ('S', 'Setup'),
@@ -29,6 +54,8 @@ class Game(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
     published = models.BooleanField(default=True)
+
+    mapfile = models.ForeignKey(StarsFile, null=True)
 
     def __unicode__(self):
         return self.name
@@ -175,31 +202,6 @@ class GameOptions(models.Model):
         validators=[MinValueValidator(30), MaxValueValidator(500)])
 
     file_contents = models.TextField(blank=True)
-
-
-def starsfile_path(instance, filename):
-    return '{type}/{year}/{month}/{day}/{uuid}'.format(
-        type=instance.get_type_display(),
-        year=instance.timestamp.year,
-        month=instance.timestamp.month,
-        day=instance.timestamp.day,
-        uuid=uuid.uuid4()
-    )
-
-
-class StarsFile(models.Model):
-    STARS_TYPES = (('r', 'race'),
-                   ('xy', 'map'),
-                   ('m', 'state'),
-                   ('x', 'orders'),
-                   ('h', 'history'),
-                   ('hst', 'host'))
-
-    upload_user = models.ForeignKey('auth.User', null=True,
-                                    related_name='starsfiles')
-    timestamp = models.DateTimeField(auto_now_add=True)
-    type = models.CharField(max_length=3, choices=STARS_TYPES)
-    file = models.FileField(upload_to=starsfile_path)
 
 
 class Race(models.Model):
