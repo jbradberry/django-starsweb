@@ -288,6 +288,62 @@ class GameCreateViewTestCase(TestCase):
         self.assertFalse(models.Game.objects.exists())
 
 
+class GameMapDownloadTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password')
+        self.client.login(username='admin', password='password')
+
+        self.game = models.Game(
+            name="Total War in Ulfland",
+            slug="total-war-in-ulfland",
+            host=self.user,
+            state='A',
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+
+        starsfile = models.StarsFile(upload_user=self.user, type='xy')
+        starsfile.save()
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+            starsfile.file.save('ulf_war.xy', File(f))
+
+        self.game.mapfile = starsfile
+        self.game.save()
+
+        self.download_url = reverse('game_mapdownload',
+                                    kwargs={'game_slug': self.game.slug})
+
+    def test_success(self):
+        self.assertIsNotNone(self.game.mapfile)
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Disposition'],
+                         'attachment; filename="total-war-in-ulfland.xy"')
+        self.assertEqual(response['Content-length'], '3864')
+
+    def test_anonymous(self):
+        # We'll allow it.
+        self.client.logout()
+        self.assertIsNotNone(self.game.mapfile)
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Disposition'],
+                         'attachment; filename="total-war-in-ulfland.xy"')
+        self.assertEqual(response['Content-length'], '3864')
+
+    def test_no_mapfile_attached(self):
+        self.game.mapfile = None
+        self.game.save()
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_does_not_exist(self):
+        download_url = reverse('game_mapdownload',
+                               kwargs={'game_slug': '500-years-after'})
+        response = self.client.get(download_url)
+        self.assertEqual(response.status_code, 404)
+
+
 class GameJoinViewTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')

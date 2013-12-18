@@ -137,6 +137,16 @@ class ParentRaceMixin(ParentGameMixin):
         return super(ParentRaceMixin, self).get_context_data(**context)
 
 
+class GameMapDownload(ParentGameMixin, View):
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        if self.game.mapfile is None:
+            raise Http404("No map file available.")
+        return sendfile(
+            self.request, self.game.mapfile.file.path, attachment=True,
+            attachment_filename='{name}.xy'.format(name=self.game.slug))
+
+
 class GameAdminView(ParentGameMixin, UpdateView):
     model = models.GameOptions
     form_class = forms.GameOptionsForm
