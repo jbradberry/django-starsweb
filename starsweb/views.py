@@ -385,41 +385,31 @@ class ScoreGraphView(DetailView):
     template_name = 'starsweb/score_graph.html'
 
     def get_context_data(self, **kwargs):
-        context = {}
-
-        score_types = ('rank', 'score', 'resources', 'techlevels', 'capships',
-                       'escortships', 'unarmedships', 'starbases', 'planets')
-
-        section_name = self.request.GET.get('section', 'score').lower()
-        if section_name and section_name in score_types:
-            section = getattr(models.Score, section_name.upper(), None)
-            context['section_name'] = section_name
-        else:
-            section = models.Score.SCORE
-            context['section_name'] = 'score'
-
-        score_names = dict(models.Score.SECTIONS)
-        sections = tuple(
-            (stype, score_names[getattr(models.Score, stype.upper())])
-            for stype in score_types
-        )
-        context['sections'] = sections
+        context = {'sections': models.Score.NAMES,
+                   'json_sections': json.dumps(models.Score.NAMES)}
 
         scores = models.Score.objects.select_related(
             'turn', 'race'
         ).filter(
-            turn__game=self.object, section=section
-        ).values('turn__year', 'race__plural_name', 'value')
+            turn__game=self.object
+        ).values('section', 'turn__year', 'race__plural_name', 'value')
 
         context['races'] = json.dumps(
-            list(self.object.races.values_list('plural_name', flat=True))
+            list(self.object.races.values_list(
+                'plural_name', flat=True).order_by('id'))
         )
 
-        context['scores'] = json.dumps([{'year': score['turn__year'],
-                                         'race': score['race__plural_name'],
-                                         'value': score['value']}
-                                         for score in scores])
-        context['scorename'] = score_names.get(section, '')
+        context['scores'] = json.dumps(
+            dict(
+                (token,
+                 [{'year': score['turn__year'],
+                   'race': score['race__plural_name'],
+                   'value': score['value']}
+                   for score in scores if score['section'] == i])
+                for i, token in enumerate(models.Score.TOKENS)
+            )
+        )
+
         context.update(kwargs)
         return super(ScoreGraphView, self).get_context_data(**context)
 

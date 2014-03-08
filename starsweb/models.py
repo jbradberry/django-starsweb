@@ -303,6 +303,14 @@ class Score(models.Model):
                 (STARBASES, 'Starbases'),
                 (PLANETS, 'Planets'),)
 
+    TOKENS = ('rank', 'score', 'resources', 'techlevels', 'capships',
+              'escortships', 'unarmedships', 'starbases', 'planets')
+
+    NAMES = tuple(
+        (token, name)
+        for token, (value, name) in zip(TOKENS, SECTIONS)
+    )
+
     turn = models.ForeignKey(Turn, related_name='scores')
     race = models.ForeignKey(Race, related_name='scores')
     section = models.IntegerField(choices=SECTIONS, default=RANK)

@@ -27,12 +27,15 @@
 {% block content %}
 <ul class="nav nav-tabs">
   {% for stype, sname in sections %}
-  <li{% if stype == section_name %} class="active"{% endif %}><a href="?section={{ stype }}">{{ sname }}</a></li>
+  <li><a href="#{{ stype }}" data-toggle="tab">{{ sname }}</a></li>
   {% endfor %}
 </ul>
 
-<div class="row">
-  <div id="graph"></div>
+<div class="tab-content row">
+  {% for stype, sname in sections %}
+  <div class="tab-pane" data-graph="{{ stype }}" data-name="{{ sname }}" id="{{ stype }}">
+  </div>
+  {% endfor %}
 </div>
 {% endblock %}
 
@@ -41,99 +44,116 @@
 <script>
 var scores = {{ scores|safe }};
 var races = {{ races|safe }};
-var scorename = "{{ scorename }}";
+var sections = {{ json_sections|safe }};
 
-var margin = {top: 20, right: 130, bottom: 30, left: 80},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+function render(fullscores, stype, sname) {
+    var scores = fullscores[stype];
 
-var x = d3.scale.linear()
-    .range([0, width]);
-var y = d3.scale.linear()
-    .range([height, 0]);
+    if (races.length <= 10) {
+        var color = d3.scale.category10();
+    } else {
+        var color = d3.scale.category20();
+    }
 
-if (races.length <= 10) {
-    var color = d3.scale.category10();
-} else {
-    var color = d3.scale.category20();
+    color.domain(races);
+
+    var racedata = d3.nest()
+        .key(function(d) { return d.race; })
+        .entries(scores);
+
+    var margin = {top: 20, right: 130, bottom: 30, left: 80},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var x = d3.scale.linear()
+        .range([0, width]);
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .tickFormat(d3.format("d"))
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+
+    x.domain(d3.extent(scores, function(d) { return d.year; }));
+
+    if ( stype === "rank" ) {
+      y.domain([d3.max(scores, function(d) { return d.value; }), 1]);
+    } else {
+      y.domain([0, d3.max(scores, function(d) { return d.value; })]);
+    }
+
+    var line = d3.svg.line()
+        .x(function(d) { return x(d.year); })
+        .y(function(d) { return y(d.value); });
+
+    var svg = d3.select("div[data-graph='"+ stype +"']").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+      .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text(sname);
+
+    var race = svg.selectAll(".race")
+          .data(racedata)
+        .enter().append("g")
+          .attr("class", "race");
+
+    race.append("path")
+          .attr("class", "line")
+          .attr("d", function(d) { return line(d.values); })
+          .style("stroke", function(d) { return color(d.key); });
+
+    var legend = svg.selectAll(".legend")
+          .data(color.domain().slice())
+        .enter().append("g")
+          .attr("class", "legend")
+          .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+    legend.append("rect")
+          .attr("x", width + 6)
+          .attr("width", 18)
+          .attr("height", 18)
+          .style("fill", color);
+
+    legend.append("text")
+          .attr("x", width + 28)
+          .attr("y", 9)
+          .attr("dy", ".35em")
+          .style("text-anchor", "start")
+          .text(function(d) { return d; });
 }
 
-color.domain(races);
+$("a[data-toggle='tab']").on("shown.bs.tab", function (e) {
+    location.replace($(e.target).attr("href"));
+});
 
-var xAxis = d3.svg.axis()
-    .scale(x)
-    .tickFormat(d3.format("d"))
-    .orient("bottom");
+$( document ).ready(function() {
+    for (i = 0; i < sections.length; i++ ) {
+        render(scores, sections[i][0], sections[i][1]);
+    }
 
-var yAxis = d3.svg.axis()
-    .scale(y)
-    .orient("left");
-
-var line = d3.svg.line()
-    .x(function(d) { return x(d.year); })
-    .y(function(d) { return y(d.value); });
-
-var svg = d3.select("#graph").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-var racedata = d3.nest()
-    .key(function(d) { return d.race; })
-    .entries(scores);
-
-x.domain(d3.extent(scores, function(d) { return d.year; }));
-
-if ( scorename === "Rank" ) {
-  y.domain([d3.max(scores, function(d) { return d.value; }), 1]);
-} else {
-  y.domain([0, d3.max(scores, function(d) { return d.value; })]);
-}
-
-svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis);
-
-svg.append("g")
-    .attr("class", "y axis")
-    .call(yAxis)
-  .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("y", 6)
-    .attr("dy", ".71em")
-    .style("text-anchor", "end")
-    .text(scorename);
-
-var race = svg.selectAll(".race")
-      .data(racedata)
-    .enter().append("g")
-      .attr("class", "race");
-
-race.append("path")
-      .attr("class", "line")
-      .attr("d", function(d) { return line(d.values); })
-      .style("stroke", function(d) { return color(d.key); });
-
-var legend = svg.selectAll(".legend")
-      .data(color.domain().slice())
-    .enter().append("g")
-      .attr("class", "legend")
-      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
-
-legend.append("rect")
-      .attr("x", width + 6)
-      .attr("width", 18)
-      .attr("height", 18)
-      .style("fill", color);
-
-legend.append("text")
-      .attr("x", width + 28)
-      .attr("y", 9)
-      .attr("dy", ".35em")
-      .style("text-anchor", "start")
-      .text(function(d) { return d; });
-
+    var tab = location.hash;
+    if ( tab === "" ) { tab = "#score"; }
+    $("a[href='"+ tab +"']").tab("show");
+});
 </script>
 {% endblock %}
