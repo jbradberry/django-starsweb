@@ -425,8 +425,9 @@ class UserDashboard(TemplateView):
         context = {
             'userraces': models.UserRace.objects.filter(
                 user=self.request.user),
-            'gameraces': models.GameRace.objects.filter(
-                race__ambassadors__user=self.request.user),
+            'races': models.Race.objects.filter(
+                ambassadors__user=self.request.user,
+                official_racefile__isnull=False),
             'new_form': forms.UserRaceForm(),
             'upload_form': forms.RaceFileForm()
         }
@@ -715,8 +716,14 @@ class RaceFileDownload(ParentRaceMixin, View):
         if not self.race.ambassadors.filter(user=self.request.user).exists():
             return HttpResponseForbidden(
                 "Not authorized to download files for this race.")
-        if self.race.racefile is None:
+
+        if self.race.official_racefile is not None:
+            racefile = self.race.official_racefile
+        elif self.race.racefile is not None:
+            racefile = self.race.racefile
+        else:
             raise Http404("No race file available.")
+
         return sendfile(
             self.request, self.race.racefile.file.path, attachment=True,
             attachment_filename='{name}.r1'.format(name=self.race.slug))

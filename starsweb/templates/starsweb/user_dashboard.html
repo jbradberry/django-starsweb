@@ -34,14 +34,14 @@
 
 <h2>Game Races</h2>
 
-{% for rf in gameraces %}
+{% for race in races %}
 <div class="row">
 <div class="panel panel-default">
 
 <div class="panel-body">
-<span class="lead">{{ rf }}</span>
+<span class="lead">{{ race }}</span>
 
-<a href="{% url 'race_download' game_slug=rf.race.game.slug race_slug=rf.race.slug %}">
+<a href="{% url 'race_download' game_slug=race.game.slug race_slug=race.slug %}">
 <span class="glyphicon glyphicon-download"></span></a>
 </div>
 

@@ -1212,15 +1212,13 @@ class UserDashboardTestCase(TestCase):
         self.race = models.Race(game=self.game,
                                 name='Gestalti',
                                 plural_name='Gestalti',
-                                slug='gestalti')
+                                slug='gestalti',
+                                official_racefile=self.starsfile1)
         self.race.save()
         self.ambassador = models.Ambassador(race=self.race,
                                             user=self.user,
                                             name="KonTiki")
         self.ambassador.save()
-        self.gamerace = models.GameRace(race=self.race,
-                                        racefile=self.starsfile1)
-        self.gamerace.save()
 
         self.dashboard_url = reverse('user_dashboard')
 
@@ -1235,9 +1233,9 @@ class UserDashboardTestCase(TestCase):
         self.assertContains(response, "Gestalti v1")
         self.assertContains(response, "SSG v1")
         self.assertIn('userraces', response.context)
-        self.assertIn('gameraces', response.context)
+        self.assertIn('races', response.context)
         self.assertEqual(len(response.context['userraces']), 2)
-        self.assertEqual(len(response.context['gameraces']), 1)
+        self.assertEqual(len(response.context['races']), 1)
 
         self.assertContains(
             response,
@@ -1269,9 +1267,9 @@ class UserDashboardTestCase(TestCase):
         self.assertContains(response, "Gestalti v1")
         self.assertContains(response, "SSG v1")
         self.assertIn('userraces', response.context)
-        self.assertIn('gameraces', response.context)
+        self.assertIn('races', response.context)
         self.assertEqual(len(response.context['userraces']), 2)
-        self.assertEqual(len(response.context['gameraces']), 1)
+        self.assertEqual(len(response.context['races']), 1)
 
         self.assertContains(
             response,
