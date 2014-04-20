@@ -278,6 +278,17 @@ class Turn(models.Model):
         return unicode(self.year)
 
 
+class RaceTurn(models.Model):
+    race = models.ForeignKey(Race, related_name='raceturns')
+    turn = models.ForeignKey(Turn, related_name='raceturns')
+    mfile = models.ForeignKey(StarsFile, related_name='mraceturn')
+    hfile = models.ForeignKey(StarsFile, null=True, related_name='hraceturn')
+    xfile = models.ForeignKey(StarsFile, null=True, related_name='xraceturn')
+    xfile_official = models.ForeignKey(StarsFile, null=True,
+                                       related_name='official_xraceturn')
+    uploads = models.IntegerField(default=0)
+
+
 class Score(models.Model):
     RANK = 0
     SCORE = 1
