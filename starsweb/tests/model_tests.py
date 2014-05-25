@@ -66,7 +66,8 @@ class StarsFileTestCase(TestCase):
 
 class GameTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='admin', password='password')
+        self.user = User.objects.create_user(username='admin',
+                                             password='password')
 
     def test_create_new_game(self):
         self.assertFalse(models.Game.objects.exists())
@@ -78,6 +79,7 @@ class GameTestCase(TestCase):
             description="This *game* is foobared.",
         )
         g.save()
+        models.GameOptions.objects.create(game=g)
 
         self.assertEqual(models.Game.objects.count(), 1)
         g = models.Game.objects.get()
@@ -86,6 +88,7 @@ class GameTestCase(TestCase):
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html,
                          "<p>This <em>game</em> is foobared.</p>")
+        self.assertIsNotNone(g.options)
 
     def test_create_game_with_empty_description(self):
         self.assertFalse(models.Game.objects.exists())
@@ -96,6 +99,7 @@ class GameTestCase(TestCase):
             host=self.user,
         )
         g.save()
+        models.GameOptions.objects.create(game=g)
 
         self.assertEqual(models.Game.objects.count(), 1)
         g = models.Game.objects.get()
@@ -103,6 +107,61 @@ class GameTestCase(TestCase):
         self.assertEqual(g.state, 'S')
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html, "")
+
+
+class GameOptionsTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin',
+                                             password='password')
+        self.game = models.Game(
+            name="Foobar",
+            slug="foobar",
+            host=self.user,
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+
+    def test_render(self):
+        options = models.GameOptions.objects.create(game=self.game)
+
+        self.game.races.create(name="Foo", plural_name="Foo", player_number=0)
+
+        winpath = r"C:\\stars\\game\\"
+        output = options.render(winpath)
+
+        output_lines = output.split('\n')
+
+        self.assertEqual(output_lines[0], "Foobar")
+        self.assertEqual(output_lines[1], "1 1 1")
+        self.assertEqual(output_lines[2], "0 0 0 0 0 1 0")
+        self.assertEqual(output_lines[3], "1") # number of races
+        self.assertEqual(output_lines[4], r"C:\\stars\\game\\race.r1")
+        self.assertIn("0\n"*7, output)
+        self.assertEqual(output_lines[12], "1 50")
+        self.assertEqual(output_lines[13], r"C:\\stars\\game\\foobar.xy")
+
+    def test_ai_render(self):
+        options = models.GameOptions.objects.create(game=self.game,
+                                                    ai_players='0,4')
+
+        self.game.races.create(name="Foo", plural_name="Foo", player_number=0)
+
+        options = models.GameOptions.objects.get()
+
+        winpath = r"C:\\stars\\game\\"
+        output = options.render(winpath)
+
+        output_lines = output.split('\n')
+
+        self.assertEqual(output_lines[0], "Foobar")
+        self.assertEqual(output_lines[1], "1 1 1")
+        self.assertEqual(output_lines[2], "0 0 0 0 0 1 0")
+        self.assertEqual(output_lines[3], "2") # number of races
+        self.assertEqual(output_lines[4], r"C:\\stars\\game\\race.r1")
+        self.assertEqual(output_lines[5], "# 0 4")
+        self.assertIn("0\n"*7, output)
+        self.assertEqual(output_lines[13], "1 50")
+        self.assertEqual(output_lines[14], r"C:\\stars\\game\\foobar.xy")
 
 
 class RaceTestCase(TestCase):
