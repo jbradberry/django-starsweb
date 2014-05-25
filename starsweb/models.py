@@ -6,8 +6,12 @@ from django.conf import settings
 from django.db import models
 from operator import attrgetter
 import uuid
+import logging
+from starslib import base
 
 from . import markup
+
+logger = logging.getLogger(__name__)
 
 
 def starsfile_path(instance, filename):
@@ -33,6 +37,37 @@ class StarsFile(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=3, choices=STARS_TYPES)
     file = models.FileField(upload_to=starsfile_path)
+
+    @classmethod
+    def from_data(cls, data, type=None, **kwargs):
+        sfile = cls.parse(data, type)
+
+        starsfile = models.StarsFile.objects.create(type=sfile.type, **kwargs)
+        starsfile.file.save(sfile.type, ContentFile(data))
+        starsfile._sfile = sfile
+        starsfile._data = data
+
+        return starsfile
+
+    @classmethod
+    def from_file(cls, file, type=None, **kwargs):
+        try:
+            file.open()
+            data = file.read()
+        finally:
+            file.close()
+
+        return cls.from_data(data, type, **kwargs)
+
+    @staticmethod
+    def parse(data, type=None):
+        sfile = base.StarsFile()
+        sfile.bytes = data
+
+        if type is not None and sfile.type != type:
+            raise Exception()
+
+        return sfile
 
 
 class Game(models.Model):
