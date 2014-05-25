@@ -346,6 +346,18 @@ class Score(models.Model):
                 (STARBASES, 'Starbases'),
                 (PLANETS, 'Planets'),)
 
+    FIELDS = (
+        ('year', RANK),
+        ('score', SCORE),
+        ('resources', RESOURCES),
+        ('tech_levels', TECHLEVELS),
+        ('capital_ships', CAPSHIPS),
+        ('escort_ships', ESCORTSHIPS),
+        ('unarmed_ships', UNARMEDSHIPS),
+        ('starbases', STARBASES),
+        ('planets', PLANETS),
+    )
+
     TOKENS = ('rank', 'score', 'resources', 'techlevels', 'capships',
               'escortships', 'unarmedships', 'starbases', 'planets')
 
