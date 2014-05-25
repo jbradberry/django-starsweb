@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.template.defaultfilters import slugify
+from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
@@ -42,7 +43,7 @@ class StarsFile(models.Model):
     def from_data(cls, data, type=None, **kwargs):
         sfile = cls.parse(data, type)
 
-        starsfile = models.StarsFile.objects.create(type=sfile.type, **kwargs)
+        starsfile = StarsFile.objects.create(type=sfile.type, **kwargs)
         starsfile.file.save(sfile.type, ContentFile(data))
         starsfile._sfile = sfile
         starsfile._data = data

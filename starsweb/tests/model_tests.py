@@ -1,7 +1,57 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.core.files.base import File
+
+import os
 
 from .. import models
+
+PATH = os.path.dirname(__file__)
+
+
+class StarsFileTestCase(TestCase):
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
+    def test_from_data(self):
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+            starsfile = models.StarsFile.from_data(f.read())
+
+        self.assertEqual(starsfile.type, 'xy')
+
+        self.assertEqual(models.StarsFile.objects.count(), 1)
+        starsfile = models.StarsFile.objects.get()
+        self.assertIsNotNone(starsfile.file)
+
+    def test_from_file(self):
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+            xy_file = File(f)
+
+            starsfile = models.StarsFile.from_file(xy_file)
+
+        self.assertEqual(starsfile.type, 'xy')
+
+        self.assertEqual(models.StarsFile.objects.count(), 1)
+        starsfile = models.StarsFile.objects.get()
+        self.assertIsNotNone(starsfile.file)
+
+    def test_copy_from_starsfile_file(self):
+        self.assertEqual(models.StarsFile.objects.count(), 0)
+
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+            starsfile = models.StarsFile.from_data(f.read())
+
+        starsfile2 = models.StarsFile.from_file(starsfile.file)
+
+        self.assertEqual(models.StarsFile.objects.count(), 2)
+        sfile1, sfile2 = models.StarsFile.objects.all()
+
+        self.assertNotEqual(sfile1.file.path, sfile2.file.path)
 
 
 class GameTestCase(TestCase):
