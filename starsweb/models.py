@@ -240,6 +240,61 @@ class GameOptions(models.Model):
 
     file_contents = models.TextField(blank=True)
 
+    @staticmethod
+    def opt_format(option):
+        if option is None:
+            return "0"
+        return "1 {0}".format(option)
+
+    def render(self, path):
+        boolean_opts = ("{self.maximum_minerals:d} {self.slow_tech:d}"
+                        " {self.accelerated_bbs:d} {random_events:d}"
+                        " {self.computer_alliances:d} {self.public_scores:d}"
+                        " {self.galaxy_clumping:d}".format(
+                            self=self, random_events=not self.random_events))
+
+        races = self.game.races.filter(player_number__isnull=False
+                                       ).order_by('player_number')
+        players = [
+            "{path}race.r{i}".format(path=path, i=race.player_number + 1)
+            for race in races
+        ]
+        players.extend(
+            "# {0} {1}".format(*ai)
+            for ai in zip(*[iter(self.ai_players.split(','))]*2)
+        )
+        del players[16:]
+
+        contents = """\
+{self.game.name}
+{self.universe_size} {self.universe_density} {self.starting_distance}
+{boolean_opts}
+{num_players}
+{player_desc}
+{vc_pct_planets}
+{vc_tech_levels}
+{vc_score}
+{vc_pct_exceeds}
+{vc_production}
+{vc_capships}
+{vc_highest_score_after}
+{self.num_criteria} {self.min_turns_to_win}
+{file_path}
+""".format(self=self, boolean_opts=boolean_opts,
+           num_players=len(players),
+           player_desc="\n".join(players),
+           vc_pct_planets=self.opt_format(self.percent_planets),
+           vc_tech_levels=0 if self.tech_level is None else "1 {0} {1}".format(
+               self.tech_level, self.tech_fields),
+           vc_score=self.opt_format(self.score),
+           vc_pct_exceeds=self.opt_format(self.exceeds_nearest_score),
+           vc_production=self.opt_format(self.production),
+           vc_capships=self.opt_format(self.capital_ships),
+           vc_highest_score_after=self.opt_format(self.highest_score_after_years),
+           file_path="{0}{1}.xy".format(path, self.game.slug[:8]))
+
+        return contents
+
 
 class Race(models.Model):
     game = models.ForeignKey(Game, related_name='races')
