@@ -269,6 +269,7 @@ class Turn(models.Model):
     game = models.ForeignKey(Game, related_name='turns')
     year = models.IntegerField()
     generated = models.DateTimeField(auto_now_add=True)
+    hstfile = models.ForeignKey(StarsFile, null=True, related_name='hstturn')
 
     class Meta:
         get_latest_by = 'generated'
