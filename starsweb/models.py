@@ -66,7 +66,8 @@ class StarsFile(models.Model):
         sfile.bytes = data
 
         if type is not None and sfile.type != type:
-            raise Exception()
+            raise ValueError("Expected StarsFile type {0},"
+                             " received {1}.".format(type, sfile.type))
 
         return sfile
 

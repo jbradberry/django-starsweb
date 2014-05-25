@@ -53,6 +53,16 @@ class StarsFileTestCase(TestCase):
 
         self.assertNotEqual(sfile1.file.path, sfile2.file.path)
 
+    def test_parse(self):
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+            data = f.read()
+
+        sfile = models.StarsFile.parse(data)
+        self.assertEqual(sfile.type, 'xy')
+
+        with self.assertRaises(ValueError):
+            models.StarsFile.parse(data, 'r')
+
 
 class GameTestCase(TestCase):
     def setUp(self):
