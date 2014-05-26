@@ -184,3 +184,20 @@ class UserRaceForm(forms.ModelForm):
     class Meta:
         model = models.UserRace
         fields = ('identifier',)
+
+
+class OrderFileForm(forms.ModelForm):
+    class Meta:
+        model = models.StarsFile
+        fields = ('file',)
+
+    def clean_file(self):
+        f = self.cleaned_data.get('file')
+
+        try:
+            self._sfile = models.StarsFile.parse(f.read(), type='x')
+        except (base.StarsError, Exception):
+            raise forms.ValidationError("Not a valid Stars order file.")
+
+        self.instance.type = 'x'
+        return f

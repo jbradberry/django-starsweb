@@ -823,10 +823,10 @@ class StateFileDownload(ParentRaceMixin, View):
                 name=self.game.slug[:8], num=self.race.player_number + 1))
 
 
-class OrdersFileDownload(ParentRaceMixin, View):
+class OrderFileDownload(ParentRaceMixin, View):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(OrdersFileDownload, self).dispatch(*args, **kwargs)
+        return super(OrderFileDownload, self).dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
@@ -849,3 +849,70 @@ class OrdersFileDownload(ParentRaceMixin, View):
             self.request, raceturn.xfile.file.path, attachment=True,
             attachment_filename='{name}.x{num}'.format(
                 name=self.game.slug[:8], num=self.race.player_number + 1))
+
+
+class OrderFileUpload(ParentRaceMixin, CreateView):
+    form_class = forms.OrderFileForm
+    template_name = 'starsweb/orderfile_upload.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(OrderFileUpload, self).dispatch(*args, **kwargs)
+
+    def get_success_url(self):
+        return self.game.get_absolute_url()
+
+    def form_valid(self, form):
+        form.instance.upload_user = self.request.user
+
+        response = super(OrderFileUpload, self).form_valid(form)
+        self.raceturn.xfile = self.object
+        self.raceturn.save()
+
+        messages.success(
+            self.request,
+            "The order file has successfully been uploaded."
+        )
+        return response
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to upload files for this race.")
+        if self.game.state not in ('A', 'P'):
+            return HttpResponseForbidden("Game is not active.")
+
+        self.current_turn = self.game.current_turn
+        if self.current_turn is None:
+            return Http404("Cannot currently upload an order file.")
+
+        raceturn = self.current_turn.raceturns.filter(race=self.race)
+        if not raceturn:
+            raise Http404("Cannot currently upload an order file.")
+        self.raceturn = raceturn.get()
+
+        return super(OrderFileUpload, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to upload files for this race.")
+        if self.game.state not in ('A', 'P'):
+            return HttpResponseForbidden("Game is not active.")
+
+        self.current_turn = self.game.current_turn
+        if self.current_turn is None:
+            return Http404("Cannot currently upload an order file.")
+
+        raceturn = self.current_turn.raceturns.filter(race=self.race)
+        if not raceturn:
+            raise Http404("Cannot currently upload an order file.")
+        self.raceturn = raceturn.get()
+
+        return super(OrderFileUpload, self).post(request, *args, **kwargs)

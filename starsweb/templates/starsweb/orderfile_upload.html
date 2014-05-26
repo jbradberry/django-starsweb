@@ -1,0 +1,12 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}Order File Upload | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>Order File Upload</h1>{% endblock %}
+
+{% block content %}
+<form enctype="multipart/form-data" method="post" action="">{% csrf_token %}
+  {{ form.as_p }}
+<input type="submit" value="Upload" />
+</form>
+{% endblock %}

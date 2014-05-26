@@ -47,7 +47,9 @@ urlpatterns = patterns('',
     url(r'^game/(?P<game_slug>[-\w]+)/turn/(?P<race_slug>[-\w]+)/download/$',
         views.StateFileDownload.as_view(), name='state_download'),
     url(r'^game/(?P<game_slug>[-\w]+)/orders/(?P<race_slug>[-\w]+)/download/$',
-        views.OrdersFileDownload.as_view(), name='orders_download'),
+        views.OrderFileDownload.as_view(), name='orders_download'),
+    url(r'^game/(?P<game_slug>[-\w]+)/orders/(?P<race_slug>[-\w]+)/upload/$',
+        views.OrderFileUpload.as_view(), name='orders_upload'),
     url(r'^create/$', views.GameCreateView.as_view(), name='create_game'),
 )
 
