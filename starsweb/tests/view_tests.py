@@ -318,7 +318,7 @@ class GameMapDownloadTestCase(TestCase):
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Disposition'],
-                         'attachment; filename="total-war-in-ulfland.xy"')
+                         'attachment; filename="total-wa.xy"')
         self.assertEqual(response['Content-length'], '3864')
 
     def test_anonymous(self):
@@ -328,7 +328,7 @@ class GameMapDownloadTestCase(TestCase):
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Disposition'],
-                         'attachment; filename="total-war-in-ulfland.xy"')
+                         'attachment; filename="total-wa.xy"')
         self.assertEqual(response['Content-length'], '3864')
 
     def test_no_mapfile_attached(self):
