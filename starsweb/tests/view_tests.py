@@ -2446,3 +2446,114 @@ class StateFileDownloadTestCase(TestCase):
 
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 404)
+
+
+class OrdersFileDownloadTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin',
+                                             password='password')
+        self.client.login(username='admin', password='password')
+
+        self.game = models.Game(
+            name="Total War in Ulfland",
+            slug="total-war-in-ulfland",
+            host=self.user, state='A',
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+        self.race = models.Race(game=self.game,
+                                name='Gestalti',
+                                plural_name='Gestalti',
+                                slug='gestalti',
+                                player_number=0)
+        self.race.save()
+        self.ambassador = models.Ambassador(race=self.race,
+                                            user=self.user,
+                                            name="KonTiki")
+        self.ambassador.save()
+
+        self.starsfile = models.StarsFile(
+            type='x', file=SimpleUploadedFile(".x", "turn 2400"))
+        self.starsfile.save()
+
+        self.turn = self.game.turns.create(year=2400)
+        self.raceturn = self.turn.raceturns.create(race=self.race,
+                                                   mfile=self.starsfile,
+                                                   xfile=self.starsfile)
+
+        self.download_url = reverse('orders_download',
+                                    kwargs={'game_slug': 'total-war-in-ulfland',
+                                            'race_slug': 'gestalti'})
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
+    def test_authorized(self):
+        self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
+
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Disposition'],
+                         'attachment; filename="total-wa.x1"')
+        self.assertEqual(response['Content-length'], '9')
+
+    def test_unauthorized(self):
+        user = User.objects.create_user(username='jrb', password='password')
+        self.client.login(username='jrb', password='password')
+
+        self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response,
+                            "Not authorized to download files for this race.",
+                            status_code=403)
+
+    def test_ambassador_no_longer_active(self):
+        # Allow players who are no longer active in a game to still
+        # download the orders file.
+        self.ambassador.active = False
+        self.ambassador.save()
+
+        self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Disposition'],
+                         'attachment; filename="total-wa.x1"')
+        self.assertEqual(response['Content-length'], '9')
+
+    def test_anonymous(self):
+        self.client.logout()
+
+        self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response,
+                             "{0}?next={1}".format(settings.LOGIN_URL,
+                                                   self.download_url))
+
+    def test_game_does_not_exist(self):
+        self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
+
+        download_url = reverse('race_download',
+                               kwargs={'game_slug': '500-years-after',
+                                       'race_slug': 'gestalti'})
+
+        response = self.client.get(download_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_race_does_not_exist(self):
+        self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
+
+        download_url = reverse('race_download',
+                               kwargs={'game_slug': 'total-war-in-ulfland',
+                                       'race_slug': 'histalti'})
+
+        response = self.client.get(download_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_no_turns_have_been_generated(self):
+        self.raceturn.delete()
+
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 404)

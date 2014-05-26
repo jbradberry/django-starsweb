@@ -821,3 +821,31 @@ class StateFileDownload(ParentRaceMixin, View):
             self.request, raceturn.mfile.file.path, attachment=True,
             attachment_filename='{name}.m{num}'.format(
                 name=self.game.slug[:8], num=self.race.player_number + 1))
+
+
+class OrdersFileDownload(ParentRaceMixin, View):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(OrdersFileDownload, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user).exists():
+            return HttpResponseForbidden(
+                "Not authorized to download files for this race.")
+
+        current = self.game.current_turn
+        if current is None:
+            raise Http404("No turn file available.")
+
+        raceturn = current.raceturns.filter(race=self.race, xfile__isnull=False)
+        if not raceturn:
+            raise Http404("No turn file available.")
+
+        raceturn = raceturn.get()
+
+        return sendfile(
+            self.request, raceturn.xfile.file.path, attachment=True,
+            attachment_filename='{name}.x{num}'.format(
+                name=self.game.slug[:8], num=self.race.player_number + 1))
