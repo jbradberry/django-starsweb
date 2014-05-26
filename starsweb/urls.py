@@ -44,6 +44,8 @@ urlpatterns = patterns('',
         views.RaceFileDownload.as_view(), name='race_download'),
     url(r'^game/(?P<game_slug>[-\w]+)/manage/(?P<race_slug>[-\w]+)/bind/$',
         views.RaceFileBind.as_view(), name='race_bind'),
+    url(r'^game/(?P<game_slug>[-\w]+)/turn/(?P<race_slug>[-\w]+)/download/$',
+        views.StateFileDownload.as_view(), name='state_download'),
     url(r'^create/$', views.GameCreateView.as_view(), name='create_game'),
 )
 

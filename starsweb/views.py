@@ -144,7 +144,7 @@ class GameMapDownload(ParentGameMixin, View):
             raise Http404("No map file available.")
         return sendfile(
             self.request, self.game.mapfile.file.path, attachment=True,
-            attachment_filename='{name}.xy'.format(name=self.game.slug))
+            attachment_filename='{name}.xy'.format(name=self.game.slug[:8]))
 
 
 class GameAdminView(ParentGameMixin, UpdateView):
@@ -793,3 +793,31 @@ class RaceFileUpload(ParentRaceMixin, CreateView):
         if self.game.state != 'S':
             return HttpResponseForbidden("Game is no longer in setup.")
         return super(RaceFileUpload, self).post(request, *args, **kwargs)
+
+
+class StateFileDownload(ParentRaceMixin, View):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(StateFileDownload, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user).exists():
+            return HttpResponseForbidden(
+                "Not authorized to download files for this race.")
+
+        current = self.game.current_turn
+        if current is None:
+            raise Http404("No turn file available.")
+
+        raceturn = current.raceturns.filter(race=self.race, mfile__isnull=False)
+        if not raceturn:
+            raise Http404("No turn file available.")
+
+        raceturn = raceturn.get()
+
+        return sendfile(
+            self.request, raceturn.mfile.file.path, attachment=True,
+            attachment_filename='{name}.m{num}'.format(
+                name=self.game.slug[:8], num=self.race.player_number + 1))
