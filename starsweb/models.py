@@ -5,9 +5,14 @@ from django.core.urlresolvers import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.db import models
+
 from operator import attrgetter
-import uuid
+import subprocess
 import logging
+import os.path
+import uuid
+import glob
+
 from starslib import base
 
 from . import markup
@@ -121,6 +126,236 @@ class Game(models.Model):
     def current_turn(self):
         if self.turns.exists():
             return self.turns.latest()
+
+    def activate(self, path):
+        # Move the game into active state.
+        if self.state != 'S':
+            logger.error(
+                "Game activation attempted on game not in setup"
+                " '{game.name}' (pk={game.pk}).".format(game=self)
+            )
+            return
+        self.state = 'A'
+        self.save()
+
+        # Process the race files for each race.
+        i = 0
+        for race in self.races.all():
+            # If the player hasn't uploaded, mark them as inactive by
+            # giving them a null player number.
+            if race.racefile is None:
+                race.player_number = None
+                race.save()
+                continue
+
+            race.player_number = i
+            i += 1
+
+            # Make a copy of their most recent uploaded file as the
+            # official copy.
+            new_starsfile = StarsFile.from_file(
+                race.racefile.file, upload_user=race.racefile.upload_user)
+            race.official_racefile = new_starsfile
+
+            # Write out the race file to the temp directory.
+            filename = 'race.r{0}'.format(race.player_number + 1)
+            with open(os.path.join(path, filename), 'w') as f:
+                f.write(new_starsfile._data)
+
+            race.save()
+
+        winpath = r'Z:{0}\\'.format(path.replace('/', r'\\'))
+
+        # Render the game options and write to a .def file.
+        opts = self.options.render(winpath)
+        self.options.file_contents = opts
+        self.options.save()
+        with open(os.path.join(path, 'game.def'), 'w') as f:
+            f.write(opts)
+
+        # Call out to Stars to create the new game files.
+        logger.info("Generating start files for '{game.name}'"
+                    " (pk={game.pk}).".format(game=self))
+
+        display = getattr(settings, 'DISPLAY', None)
+        display = '' if display is None else "DISPLAY={0} ".format(display)
+
+        subprocess.call(
+            r'{display}wine C:\\stars\\stars\!.exe'
+            r' -a {winpath}game.def'.format(winpath=winpath, display=display),
+            shell=True
+        )
+
+        self.process_activation(path)
+
+    def generate(self, path):
+        winpath = r'Z:{0}\\'.format(path.replace('/', r'\\'))
+
+        current = self.current_turn
+
+        # Write out the host file to the temp directory.
+        try:
+            current.hstfile.file.open()
+            hst = current.hstfile.file.read()
+        finally:
+            current.hstfile.file.close()
+
+        with open(os.path.join(path, 'game.hst'), 'w') as f:
+            f.write(hst)
+
+        # Process the x files for every race playing.
+        for raceturn in current.raceturns.all():
+            if raceturn.xfile:
+                # Save off the most recent x file as the official one.
+                raceturn.xfile_official = StarsFile.from_file(
+                    raceturn.xfile.file,
+                    upload_user=raceturn.xfile.upload_user
+                )
+                raceturn.save()
+
+                # Write out the x file to the temp directory.
+                target = os.path.join(
+                    path, 'game.x{0}'.format(raceturn.race.player_number + 1))
+                with open(target, 'w') as f:
+                    f.write(raceturn.xfile_official._data)
+
+        display = getattr(settings, 'DISPLAY', None)
+        display = '' if display is None else "DISPLAY={0} ".format(display)
+
+        # Call out to Stars to generate the new turn files.
+        subprocess.call(
+            r'{display}wine C:\\stars\\stars\!.exe'
+            r' -g {winpath}game.hst'.format(winpath=winpath, display=display),
+            shell=True
+        )
+
+        self.process_new_turn(path)
+
+    def process_activation(self, path):
+        # Process and attach the game.xy map file.
+        xy_files = glob.glob('{0}/*.xy'.format(path))
+        if len(xy_files) != 1:
+            raise Exception(
+                "Expected one xy file, found {0}.".format(len(xy_files)))
+
+        with open(xy_files[0]) as f:
+            self.mapfile = StarsFile.from_data(f.read())
+        self.save()
+
+        # Process the host file.
+        hst_files = glob.glob('{0}/*.hst'.format(path))
+        if len(hst_files) != 1:
+            raise Exception(
+                "Expected one hst file, found {0}.".format(len(hst_files)))
+
+        with open(hst_files[0]) as f:
+            hst = StarsFile.from_data(f.read())
+
+        # Check the resultant races for any that need to be created or changed.
+        races = dict((r.player_number, r)
+                     for r in self.races.filter(player_number__isnull=False))
+
+        for r in hst._sfile.structs:
+            if r.type != 6: # Type 6 is the Race data structure.
+                continue
+
+            race_obj = races.get(r.player)
+
+            # Grab the name and plural name out of the race struct.
+            name, plural_name = r.race_name, r.plural_race_name
+            if not plural_name:
+                plural_name = '{0}s'.format(name)
+
+            # If the race object doesn't exist yet, it's an AI player,
+            # so create it.
+            if race_obj is None:
+                self.races.create(name=name, plural_name=plural_name,
+                                  is_ai=True, player_number=r.player)
+                continue
+
+            # Update the player race names if they got bumped due to a conflict.
+            if (race_obj.name != name or race_obj.plural_name != plural_name):
+                Race.objects.filter(pk=race_obj.pk).update(
+                    name=name, plural_name=plural_name)
+
+        self.process_new_turn(path, hst)
+
+    def process_new_turn(self, path, hst=None):
+        # Get and process the host file if we didn't already from
+        # process_activation.
+        if hst is None:
+            hst_files = glob.glob('{0}/*.hst'.format(path))
+            if len(hst_files) != 1:
+                raise Exception(
+                    "Expected one hst file, found {0}.".format(len(hst_files)))
+
+            with open(hst_files[0]) as f:
+                hst = StarsFile.from_data(f.read())
+
+        # Create the new turn with host file attached.
+        turn = self.turns.create(year=2400 + hst._sfile.structs[0].turn,
+                                 hstfile=hst)
+
+        # Process the m files.
+        races = dict((r.player_number, r)
+                     for r in self.races.filter(player_number__isnull=False))
+        scores = {}
+        scores_unmatched = set((race, section) for race in races
+                               for sfield, section in Score.FIELDS)
+
+        for m_name in glob.glob('{0}/*.m[0-9]*'.format(path)):
+            with open(m_name) as f:
+                mfile = StarsFile.from_data(f.read())
+
+            structs = mfile._sfile.structs
+            player = structs[0].player
+
+            # Create a new Race-Turn intermediate table entry, with
+            # the m file attached.
+            raceturn = turn.raceturns.create(race=races[player], mfile=mfile)
+
+            for S in structs:
+                if S.type != 45: # Type 45 is the Score data structure.
+                    continue
+
+                for sfield, section in Score.FIELDS:
+                    value = getattr(S, sfield, 0)
+
+                    # Save all scores from this file, to potentially
+                    # fill in any blanks in the record.
+                    scores.setdefault((S.player, section), set()).add(value)
+
+                    # A player's own score record is canonical, so use
+                    # that if available.
+                    if S.player == player:
+                        turn.scores.create(
+                            race=races[player], section=section, value=value)
+                        scores_unmatched.remove((S.player, section))
+
+        # If there are any blank scores left over, fill them in with
+        # data from the other m files.
+        if scores_unmatched and scores:
+            logger.info(
+                "Filling in blanks for players,"
+                " game id: {0}, players: ({1})".format(
+                    self.id,
+                    ', '.join(str(player)
+                              for player, section in scores_unmatched)
+                )
+            )
+
+            for player, section in scores_unmatched:
+                if len(scores[(player, section)]) > 1:
+                    logger.info(
+                        "More than one distinct score found,"
+                        " game id: {0}, player: {1}, section: {2}".format(
+                            self.id, player, section)
+                    )
+
+                turn.scores.create(
+                    race=races[player], section=section,
+                    value=max(scores[(player, section)])
+                )
 
 
 class GameOptions(models.Model):
