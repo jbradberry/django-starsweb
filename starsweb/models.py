@@ -111,18 +111,6 @@ class Game(models.Model):
         return reverse('game_detail', kwargs={'slug': self.slug})
 
     @property
-    def press(self):
-        if 'micropress' in settings.INSTALLED_APPS:
-            press = models.get_model('micropress', 'press')
-            ct = ContentType.objects.get(app_label="starsweb",
-                                         model="game")
-            press = press.objects.filter(
-                content_type=ct,
-                object_id=self.id)
-            if press.exists():
-                return press.get()
-
-    @property
     def current_turn(self):
         if self.turns.exists():
             return self.turns.latest()
