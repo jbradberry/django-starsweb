@@ -530,6 +530,8 @@ class Race(models.Model):
                                  related_name='race')
     official_racefile = models.ForeignKey(StarsFile, null=True, blank=True,
                                           related_name='official_race')
+    default_racepage = models.ForeignKey('RacePage', null=True,
+                                         related_name='+')
 
     class Meta:
         unique_together = (('game', 'slug'),
@@ -553,6 +555,20 @@ class Race(models.Model):
     def number(self):
         if self.player_number is not None:
             return self.player_number + 1
+
+
+class RacePage(models.Model):
+    race = models.ForeignKey(Race)
+    slug = models.SlugField(max_length=32)
+    title = models.CharField(max_length=32)
+    body = models.TextField()
+    body_html = models.TextField()
+    markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
+                                   default=markup.DEFAULT_MARKUP)
+
+    def save(self, *args, **kwargs):
+        self.body_html = markup.process(self.description, self.markup_type)
+        super(RacePage, self).save(*args, **kwargs)
 
 
 class UserRace(models.Model):
