@@ -39,7 +39,7 @@ class StarsFile(models.Model):
                    ('hst', 'host'))
 
     upload_user = models.ForeignKey('auth.User', null=True,
-                                    related_name='starsfiles')
+                                    related_name='starsweb_files')
     timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=3, choices=STARS_TYPES)
     file = models.FileField(upload_to=starsfile_path)
@@ -92,7 +92,7 @@ class Game(models.Model):
     markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
                                    default=markup.DEFAULT_MARKUP)
 
-    host = models.ForeignKey("auth.User", related_name='stars_games')
+    host = models.ForeignKey("auth.User", related_name='starsweb_games')
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
     published = models.BooleanField(default=True)
@@ -572,7 +572,7 @@ class RacePage(models.Model):
 
 
 class UserRace(models.Model):
-    user = models.ForeignKey('auth.User', related_name='racepool')
+    user = models.ForeignKey('auth.User', related_name='starsweb_racepool')
     identifier = models.CharField(max_length=64)
     racefile = models.ForeignKey(StarsFile, null=True, blank=True)
 
@@ -585,7 +585,7 @@ class UserRace(models.Model):
 
 class Ambassador(models.Model):
     race = models.ForeignKey(Race, related_name='ambassadors')
-    user = models.ForeignKey("auth.User")
+    user = models.ForeignKey("auth.User", related_name='starsweb_ambassadors')
     name = models.CharField(max_length=128)
     active = models.BooleanField(default=True)
 

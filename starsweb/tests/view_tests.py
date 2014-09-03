@@ -1077,7 +1077,7 @@ class RaceDashboardViewTestCase(TestCase):
                                                  kwargs=self.url_kwargs))
 
     def test_userrace_with_no_racefile(self):
-        userrace = self.user.racepool.create(identifier="Gestalti v1")
+        userrace = self.user.starsweb_racepool.create(identifier="Gestalti v1")
         self.assertFalse(models.UserRace.objects.filter(racefile__isnull=False))
 
         try:
@@ -1104,7 +1104,7 @@ class RaceDashboardViewTestCase(TestCase):
         self.assertNotContains(response, "Gestalti v1")
 
     def test_userrace_with_racefile(self):
-        userrace = self.user.racepool.create(identifier="Gestalti v1")
+        userrace = self.user.starsweb_racepool.create(identifier="Gestalti v1")
         starsfile = models.StarsFile(upload_user=self.user, type='r')
         starsfile.save()
         with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
