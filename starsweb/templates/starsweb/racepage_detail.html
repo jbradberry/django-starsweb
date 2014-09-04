@@ -1,0 +1,11 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}{{ object.title }} | {{ race }} | {{ block.super }}{% endblock %}
+
+{% block header %}
+<h1>{{ object.title }}</h1>
+{% endblock %}
+
+{% block content %}
+{{ object.body_html|safe }}
+{% endblock %}

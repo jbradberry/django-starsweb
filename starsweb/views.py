@@ -344,6 +344,16 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
         return super(AmbassadorUpdateView, self).dispatch(*args, **kwargs)
 
 
+class RacePageView(ParentRaceMixin, DetailView):
+    def get_queryset(self):
+        return self.race.racepage_set.all()
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        return super(RacePageView, self).get(request, *args, **kwargs)
+
+
 class RaceDashboardView(ParentRaceMixin, TemplateView):
     template_name = 'starsweb/race_dashboard.html'
 
