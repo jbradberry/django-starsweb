@@ -567,7 +567,7 @@ class RacePage(models.Model):
                                    default=markup.DEFAULT_MARKUP)
 
     def save(self, *args, **kwargs):
-        self.body_html = markup.process(self.description, self.markup_type)
+        self.body_html = markup.process(self.body, self.markup_type)
         super(RacePage, self).save(*args, **kwargs)
 
 
