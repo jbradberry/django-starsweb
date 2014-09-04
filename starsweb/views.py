@@ -345,6 +345,12 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
 
 
 class RacePageView(ParentRaceMixin, DetailView):
+    def get_object(self, queryset=None):
+        if self.kwargs.get('slug') is None:
+            if self.race.default_racepage is not None:
+                return self.race.default_racepage
+        return super(RacePageView, self).get_object(queryset)
+
     def get_queryset(self):
         return self.race.racepage_set.all()
 
