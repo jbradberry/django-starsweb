@@ -347,12 +347,12 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
 class RacePageView(ParentRaceMixin, DetailView):
     def get_object(self, queryset=None):
         if self.kwargs.get('slug') is None:
-            if self.race.default_racepage is not None:
-                return self.race.default_racepage
+            if self.race.homepage is not None:
+                return self.race.homepage
         return super(RacePageView, self).get_object(queryset)
 
     def get_queryset(self):
-        return self.race.racepage_set.all()
+        return self.race.racepages.all()
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
@@ -404,7 +404,7 @@ class RacePageUpdate(ParentRaceMixin, UpdateView):
     form_class = forms.RacePageForm
 
     def get_queryset(self):
-        return self.race.racepage_set.all()
+        return self.race.racepages.all()
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
@@ -444,7 +444,7 @@ class RacePageDelete(ParentRaceMixin, DeleteView):
         return reverse_lazy('game_detail', kwargs={'slug': self.game.slug})
 
     def get_queryset(self):
-        return self.race.racepage_set.all()
+        return self.race.racepages.all()
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
@@ -470,7 +470,7 @@ class RacePageDelete(ParentRaceMixin, DeleteView):
         if self.game.state == 'F':
             return HttpResponseForbidden("Game is not active.")
 
-        self.race.default_page = None
+        self.race.homepage = None
         self.race.save()
 
         return super(RacePageDelete, self).delete(request, *args, **kwargs)

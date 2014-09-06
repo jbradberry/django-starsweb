@@ -530,8 +530,7 @@ class Race(models.Model):
                                  related_name='race')
     official_racefile = models.ForeignKey(StarsFile, null=True, blank=True,
                                           related_name='official_race')
-    default_racepage = models.ForeignKey('RacePage', null=True,
-                                         related_name='+')
+    homepage = models.ForeignKey('RacePage', null=True, related_name='+')
 
     class Meta:
         unique_together = (('game', 'slug'),
@@ -558,7 +557,7 @@ class Race(models.Model):
 
 
 class RacePage(models.Model):
-    race = models.ForeignKey(Race)
+    race = models.ForeignKey(Race, related_name='racepages')
     slug = models.SlugField(max_length=32)
     title = models.CharField(max_length=32)
     body = models.TextField()
@@ -577,7 +576,7 @@ class RacePage(models.Model):
         if len(slug) > max_length:
             slug = slug[:max_length]
 
-        while self.race.racepage_set.filter(slug=slug+end).exists():
+        while self.race.racepages.filter(slug=slug+end).exists():
             num += 1
             end = "-{0}".format(num)
             if len(slug) + len(end) > max_length:
