@@ -459,7 +459,7 @@ class RacePageDelete(ParentRaceMixin, DeleteView):
 
         return super(RacePageDelete, self).get(request, *args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
         self.game = self.get_game()
         self.race = self.get_race()
 
@@ -470,7 +470,10 @@ class RacePageDelete(ParentRaceMixin, DeleteView):
         if self.game.state == 'F':
             return HttpResponseForbidden("Game is not active.")
 
-        return super(RacePageDelete, self).post(request, *args, **kwargs)
+        self.race.default_page = None
+        self.race.save()
+
+        return super(RacePageDelete, self).delete(request, *args, **kwargs)
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
