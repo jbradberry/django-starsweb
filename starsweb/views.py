@@ -349,6 +349,8 @@ class RacePageView(ParentRaceMixin, DetailView):
         if self.kwargs.get('slug') is None:
             if self.race.homepage is not None:
                 return self.race.homepage
+            else:
+                raise Http404
         return super(RacePageView, self).get_object(queryset)
 
     def get_queryset(self):
