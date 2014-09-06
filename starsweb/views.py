@@ -399,6 +399,44 @@ class RacePageCreate(ParentRaceMixin, CreateView):
         return super(RacePageCreate, self).form_valid(form)
 
 
+class RacePageUpdate(ParentRaceMixin, UpdateView):
+    model = models.RacePage
+    form_class = forms.RacePageForm
+
+    def get_queryset(self):
+        return self.race.racepage_set.all()
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to update pages for this race.")
+        if self.game.state == 'F':
+            return HttpResponseForbidden("Game is not active.")
+
+        return super(RacePageUpdate, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to update pages for this race.")
+        if self.game.state == 'F':
+            return HttpResponseForbidden("Game is not active.")
+
+        return super(RacePageUpdate, self).post(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RacePageUpdate, self).dispatch(*args, **kwargs)
+
+
 class RaceDashboardView(ParentRaceMixin, TemplateView):
     template_name = 'starsweb/race_dashboard.html'
 
