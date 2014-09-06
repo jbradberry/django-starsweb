@@ -360,6 +360,45 @@ class RacePageView(ParentRaceMixin, DetailView):
         return super(RacePageView, self).get(request, *args, **kwargs)
 
 
+class RacePageCreate(ParentRaceMixin, CreateView):
+    model = models.RacePage
+    form_class = forms.RacePageForm
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to create pages for this race.")
+        if self.game.state == 'F':
+            return HttpResponseForbidden("Game is not active.")
+
+        return super(RacePageCreate, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to create pages for this race.")
+        if self.game.state == 'F':
+            return HttpResponseForbidden("Game is not active.")
+
+        return super(RacePageCreate, self).post(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RacePageCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.race = self.race
+        return super(RacePageCreate, self).form_valid(form)
+
+
 class RaceDashboardView(ParentRaceMixin, TemplateView):
     template_name = 'starsweb/race_dashboard.html'
 

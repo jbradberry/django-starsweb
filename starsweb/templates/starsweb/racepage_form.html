@@ -1,0 +1,15 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}Create Race Page | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>Create Race Page</h1>{% endblock %}
+
+{% block content %}
+<form method="post" action="">{% csrf_token %}
+  <fieldset>
+  <legend>Race Page</legend>
+  {{ form.as_p }}
+  </fieldset>
+<input type="submit" value="Create" />
+</form>
+{% endblock %}

@@ -201,3 +201,9 @@ class OrderFileForm(forms.ModelForm):
 
         self.instance.type = 'x'
         return f
+
+
+class RacePageForm(forms.ModelForm):
+    class Meta:
+        model = models.RacePage
+        fields = ('title', 'body')

@@ -584,6 +584,12 @@ class RacePage(models.Model):
 
         super(RacePage, self).save(*args, **kwargs)
 
+    def get_absolute_url(self):
+        return reverse('race_page',
+                       kwargs={'game_slug': self.race.game.slug,
+                               'race_slug': self.race.slug,
+                               'slug': self.slug})
+
 
 class UserRace(models.Model):
     user = models.ForeignKey('auth.User', related_name='starsweb_racepool')
