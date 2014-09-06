@@ -437,6 +437,46 @@ class RacePageUpdate(ParentRaceMixin, UpdateView):
         return super(RacePageUpdate, self).dispatch(*args, **kwargs)
 
 
+class RacePageDelete(ParentRaceMixin, DeleteView):
+    model = models.RacePage
+
+    def get_success_url(self):
+        return reverse_lazy('game_detail', kwargs={'slug': self.game.slug})
+
+    def get_queryset(self):
+        return self.race.racepage_set.all()
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to delete pages for this race.")
+        if self.game.state == 'F':
+            return HttpResponseForbidden("Game is not active.")
+
+        return super(RacePageDelete, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to delete pages for this race.")
+        if self.game.state == 'F':
+            return HttpResponseForbidden("Game is not active.")
+
+        return super(RacePageDelete, self).post(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(RacePageDelete, self).dispatch(*args, **kwargs)
+
+
 class RaceDashboardView(ParentRaceMixin, TemplateView):
     template_name = 'starsweb/race_dashboard.html'
 

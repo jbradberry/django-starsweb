@@ -1,0 +1,12 @@
+{% extends "starsweb/base.html" %}
+
+{% block title %}Delete Race Page | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>Delete Race Page</h1>{% endblock %}
+
+{% block content %}
+<form method="post" action="">{% csrf_token %}
+  <p>Are you sure you want to delete "{{ object }}"?</p>
+  <input type="submit" value="Confirm" />
+</form>
+{% endblock %}
