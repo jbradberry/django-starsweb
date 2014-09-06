@@ -566,6 +566,9 @@ class RacePage(models.Model):
     markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
                                    default=markup.DEFAULT_MARKUP)
 
+    def __unicode__(self):
+        return self.title
+
     def save(self, *args, **kwargs):
         self.body_html = markup.process(self.body, self.markup_type)
 
