@@ -398,7 +398,11 @@ class RacePageCreate(ParentRaceMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.race = self.race
-        return super(RacePageCreate, self).form_valid(form)
+        response = super(RacePageCreate, self).form_valid(form)
+        if form.cleaned_data['set_as_homepage']:
+            self.race.homepage = self.object
+            self.race.save()
+        return response
 
 
 class RacePageUpdate(ParentRaceMixin, UpdateView):
@@ -437,6 +441,13 @@ class RacePageUpdate(ParentRaceMixin, UpdateView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(RacePageUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        response = super(RacePageUpdate, self).form_valid(form)
+        if form.cleaned_data['set_as_homepage']:
+            self.race.homepage = self.object
+            self.race.save()
+        return response
 
 
 class RacePageDelete(ParentRaceMixin, DeleteView):

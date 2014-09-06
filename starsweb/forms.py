@@ -204,6 +204,8 @@ class OrderFileForm(forms.ModelForm):
 
 
 class RacePageForm(forms.ModelForm):
+    set_as_homepage = forms.BooleanField(required=False)
+
     class Meta:
         model = models.RacePage
         fields = ('title', 'body')
