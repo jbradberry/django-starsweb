@@ -32,7 +32,7 @@
     {% for race, score in races %}
     <tr>
 	<td>{{ race.all_ambassadors|default_if_none:"--" }}</td>
-	<td>The {{ race }}</td>
+	<td>{% if race.homepage %}<a href="{% url 'race_homepage' game_slug=game.slug race_slug=race.slug %}">{% endif %}The {{ race }}{% if race.homepage %}</a>{% endif %}</td>
 	<td>{{ score|default_if_none:"N/A" }}</td>
     </tr>
     {% endfor %}
