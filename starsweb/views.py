@@ -399,7 +399,7 @@ class RacePageCreate(ParentRaceMixin, CreateView):
     def form_valid(self, form):
         form.instance.race = self.race
         response = super(RacePageCreate, self).form_valid(form)
-        if form.cleaned_data['set_as_homepage']:
+        if not self.race.homepage or form.cleaned_data['set_as_homepage']:
             self.race.homepage = self.object
             self.race.save()
         return response
@@ -444,7 +444,7 @@ class RacePageUpdate(ParentRaceMixin, UpdateView):
 
     def form_valid(self, form):
         response = super(RacePageUpdate, self).form_valid(form)
-        if form.cleaned_data['set_as_homepage']:
+        if not self.race.homepage or form.cleaned_data['set_as_homepage']:
             self.race.homepage = self.object
             self.race.save()
         return response

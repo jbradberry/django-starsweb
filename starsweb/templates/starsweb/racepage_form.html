@@ -10,8 +10,12 @@
     {{ form.non_field_errors }}
     <p>{{ form.title.errors }}<label for="{{ form.title.id_for_label }}">{{ form.title.label }}:</label> {{ form.title }}</p>
     <p>{{ form.body.errors }}<label for="{{ form.body.id_for_label }}">{{ form.body.label }}:</label> {{ form.body }}</p>
+    {% if not race.homepage %}
+    <p>This page will become the new homepage.</p>
+    {% else %}
     {% if race.homepage != form.instance %}
     <p>{{ form.set_as_homepage.errors }}<label for="{{ form.set_as_homepage.id_for_label }}">{{ form.set_as_homepage.label }}:</label> {{ form.set_as_homepage }}</p>
+    {% endif %}
     {% endif %}
   </fieldset>
 <input type="submit" value="Save" />
