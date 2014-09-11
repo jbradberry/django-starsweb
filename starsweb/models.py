@@ -679,6 +679,11 @@ class Score(models.Model):
     TOKENS = ('rank', 'score', 'resources', 'techlevels', 'capships',
               'escortships', 'unarmedships', 'starbases', 'planets')
 
+    TOKEN_VALUES = dict(
+        (value, token)
+        for token, (value, name) in zip(TOKENS, SECTIONS)
+    )
+
     NAMES = tuple(
         (token, name)
         for token, (value, name) in zip(TOKENS, SECTIONS)

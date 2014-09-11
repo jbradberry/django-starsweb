@@ -535,7 +535,7 @@ class ScoreGraphView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = {'sections': models.Score.NAMES,
-                   'json_sections': json.dumps(models.Score.NAMES)}
+                   'json_sections': json.dumps(dict(models.Score.NAMES))}
 
         scores = models.Score.objects.select_related(
             'turn', 'race'
@@ -548,16 +548,17 @@ class ScoreGraphView(DetailView):
                 'plural_name', flat=True).order_by('id'))
         )
 
-        context['scores'] = json.dumps(
-            dict(
-                (token,
-                 [{'year': score['turn__year'],
-                   'race': score['race__plural_name'],
-                   'value': score['value']}
-                   for score in scores if score['section'] == i])
-                for i, token in enumerate(models.Score.TOKENS)
-            )
-        )
+        score_data = {}
+        for item in scores:
+            section_set = score_data.setdefault(
+                models.Score.TOKEN_VALUES[item['section']], {})
+            race_set = section_set.setdefault(
+                item['race__plural_name'], {})
+            race_set[item['turn__year']] = item['value']
+
+        context['scores'] = json.dumps(score_data)
+        context.update({'year_min': min(x['turn__year'] for x in scores),
+                        'year_max': max(x['turn__year'] for x in scores)})
 
         context.update(kwargs)
         return super(ScoreGraphView, self).get_context_data(**context)

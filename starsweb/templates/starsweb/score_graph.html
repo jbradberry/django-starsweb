@@ -27,15 +27,12 @@
 {% block content %}
 <ul class="nav nav-tabs">
   {% for stype, sname in sections %}
-  <li><a href="#{{ stype }}" data-toggle="tab">{{ sname }}</a></li>
+  <li><a id="tab-{{ stype }}" role="tab" data-toggle="tab" data-stype="{{ stype }}">{{ sname }}</a></li>
   {% endfor %}
 </ul>
 
-<div class="tab-content row">
-  {% for stype, sname in sections %}
-  <div class="tab-pane" data-graph="{{ stype }}" data-name="{{ sname }}" id="{{ stype }}">
-  </div>
-  {% endfor %}
+<div class="row">
+  <svg class="graph"></svg>
 </div>
 {% endblock %}
 
@@ -45,115 +42,128 @@
 var scores = {{ scores|safe }};
 var races = {{ races|safe }};
 var sections = {{ json_sections|safe }};
+var year_min = {{ year_min }};
+var year_max = {{ year_max }};
+</script>
 
-function render(fullscores, stype, sname) {
-    var scores = fullscores[stype];
+<script>
+var margin = {top: 20, right: 130, bottom: 40, left: 80},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
 
-    if (races.length <= 10) {
+var x = d3.scale.linear()
+    .range([0, width])
+    .domain([year_min, year_max]);
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .tickFormat(d3.format("d"))
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var svg = d3.select("svg.graph")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+  .append("text")
+    .style("text-anchor", "middle")
+    .attr("transform", "translate(" + (width / 2) + "," + margin.bottom + ")")
+    .text("Year")
+
+svg.append("g")
+    .attr("class", "y axis")
+  .append("text")
+    .style("text-anchor", "middle")
+    .attr("transform", "translate(" + (12 - margin.left) + "," + (height / 2) + ") rotate(-90)")
+
+var line = d3.svg.line()
+    .x(function(d) { return x(d.key); })
+    .y(function(d) { return y(d.value); });
+
+
+function graph_draw(stype, raceset) {
+    if (raceset.length <= 10) {
         var color = d3.scale.category10();
     } else {
         var color = d3.scale.category20();
     }
+    color.domain(raceset);
+    raceset = color.domain().slice();
 
-    color.domain(races);
-
-    var racedata = d3.nest()
-        .key(function(d) { return d.race; })
-        .entries(scores);
-
-    var margin = {top: 20, right: 130, bottom: 30, left: 80},
-        width = 960 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
-
-    var x = d3.scale.linear()
-        .range([0, width]);
-    var y = d3.scale.linear()
-        .range([height, 0]);
-
-    var xAxis = d3.svg.axis()
-        .scale(x)
-        .tickFormat(d3.format("d"))
-        .orient("bottom");
-
-    var yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left");
-
-    x.domain(d3.extent(scores, function(d) { return d.year; }));
+    var data = [];
+    $.each(raceset, function(index, value) {
+        data[index] = {"race": value, "values": scores[stype][value]};
+    });
 
     if ( stype === "rank" ) {
-      y.domain([d3.max(scores, function(d) { return d.value; }), 1]);
+        y.domain([d3.max(data, function(d) { return d3.max(d3.values(d.values)); }), 1]);
     } else {
-      y.domain([0, d3.max(scores, function(d) { return d.value; })]);
+        y.domain([0, d3.max(data, function(d) { return d3.max(d3.values(d.values)); })]);
     }
 
-    var line = d3.svg.line()
-        .x(function(d) { return x(d.year); })
-        .y(function(d) { return y(d.value); });
-
-    var svg = d3.select("div[data-graph='"+ stype +"']").append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
+    svg.select("g.x.axis")
         .call(xAxis);
+    svg.select("g.y.axis")
+        .call(yAxis);
 
-    svg.append("g")
-        .attr("class", "y axis")
-        .call(yAxis)
-      .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 6)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text(sname);
+    svg.select("g.y.axis > text")
+        .text(sections[stype]);
 
     var race = svg.selectAll(".race")
-          .data(racedata)
-        .enter().append("g")
-          .attr("class", "race");
+        .data(data, function(d) { return d.race; });
 
-    race.append("path")
-          .attr("class", "line")
-          .attr("d", function(d) { return line(d.values); })
-          .style("stroke", function(d) { return color(d.key); });
+    race.exit().remove();
+
+    race.enter().append("g")
+        .attr("class", "race")
+      .append("path")
+        .attr("class", "line");
+
+    race.select("path")
+        .attr("d", function(d) { return line(d3.entries(d.values)); })
+        .style("stroke", function(d) { return color(d.race); });
 
     var legend = svg.selectAll(".legend")
-          .data(color.domain().slice())
-        .enter().append("g")
-          .attr("class", "legend")
-          .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+        .data(raceset);
 
-    legend.append("rect")
-          .attr("x", width + 6)
-          .attr("width", 18)
-          .attr("height", 18)
-          .style("fill", color);
+    legend.exit().remove();
 
-    legend.append("text")
-          .attr("x", width + 28)
-          .attr("y", 9)
-          .attr("dy", ".35em")
-          .style("text-anchor", "start")
-          .text(function(d) { return d; });
+    var new_legend = legend.enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+    new_legend.append("rect")
+        .attr("x", width + 6)
+        .attr("width", 18)
+        .attr("height", 18);
+
+    new_legend.append("text")
+        .attr("x", width + 28)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .style("text-anchor", "start");
+
+    legend.select("rect").style("fill", color);
+    legend.select("text").text(function(d) { return d; });
 }
 
 $("a[data-toggle='tab']").on("shown.bs.tab", function (e) {
-    location.replace($(e.target).attr("href"));
+    var stype = $(e.target).data("stype");
+    graph_draw(stype, races);
 });
 
 $( document ).ready(function() {
-    for (i = 0; i < sections.length; i++ ) {
-        render(scores, sections[i][0], sections[i][1]);
-    }
-
-    var tab = location.hash;
-    if ( tab === "" ) { tab = "#score"; }
-    $("a[href='"+ tab +"']").tab("show");
+    $("a#tab-score").tab("show");
 });
 </script>
 {% endblock %}
