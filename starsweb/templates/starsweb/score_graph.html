@@ -37,6 +37,7 @@
 
 <div>
   <form id="graph-selection">
+    <input type="hidden" name="section" value="{{ section }}" />
     {% for race in races %}
     <p><label>{{ race }}: <input type="checkbox" name="races" value="{{ race }}"{% if race in visible_races %} checked="checked"{% endif %} /></label></p>
     {% endfor %}
@@ -172,15 +173,17 @@ function update_url($form) {
 function draw_from_form($form) {
     var races = [];
     var stype = "score";
+    console.log($form.serializeArray());
     $.each($form.serializeArray(), function (index, value) {
         if ( value['name'] === "races" ) { races.push(value['value']); }
-        if ( value['name'] === "stype" ) { stype = value['value']; }
+        if ( value['name'] === "section" && value['value'] ) { stype = value['value']; }
     });
     graph_draw(stype, races);
 }
 
 $("a[data-toggle='tab']").on("shown.bs.tab", function (e) {
     var stype = $(e.target).data("stype");
+    $("form input[name='section']").val(stype);
     draw_from_form($("form#graph-selection"));
 });
 
