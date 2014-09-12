@@ -173,7 +173,6 @@ function update_url($form) {
 function draw_from_form($form) {
     var races = [];
     var stype = "score";
-    console.log($form.serializeArray());
     $.each($form.serializeArray(), function (index, value) {
         if ( value['name'] === "races" ) { races.push(value['value']); }
         if ( value['name'] === "section" && value['value'] ) { stype = value['value']; }
