@@ -537,16 +537,19 @@ class ScoreGraphView(DetailView):
         context = {'sections': models.Score.NAMES,
                    'json_sections': json.dumps(dict(models.Score.NAMES))}
 
+        races = list(self.object.races.values_list(
+            'plural_name', flat=True).order_by('id'))
+        context.update({
+            'races': races,
+            'visible_races': self.request.GET.getlist('races', races),
+            'section': self.request.GET.get('section', 'score'),
+        })
+
         scores = models.Score.objects.select_related(
             'turn', 'race'
         ).filter(
             turn__game=self.object
         ).values('section', 'turn__year', 'race__plural_name', 'value')
-
-        context['races'] = json.dumps(
-            list(self.object.races.values_list(
-                'plural_name', flat=True).order_by('id'))
-        )
 
         score_data = {}
         for item in scores:
@@ -556,8 +559,8 @@ class ScoreGraphView(DetailView):
                 item['race__plural_name'], {})
             race_set[item['turn__year']] = item['value']
 
-        context['scores'] = json.dumps(score_data)
-        context.update({'year_min': min(x['turn__year'] for x in scores),
+        context.update({'scores': json.dumps(score_data),
+                        'year_min': min(x['turn__year'] for x in scores),
                         'year_max': max(x['turn__year'] for x in scores)})
 
         context.update(kwargs)

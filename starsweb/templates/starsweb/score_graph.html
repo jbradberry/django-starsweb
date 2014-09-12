@@ -27,12 +27,21 @@
 {% block content %}
 <ul class="nav nav-tabs">
   {% for stype, sname in sections %}
-  <li><a id="tab-{{ stype }}" role="tab" data-toggle="tab" data-stype="{{ stype }}">{{ sname }}</a></li>
+  <li{% if stype == section %} class="active"{% endif %}><a id="tab-{{ stype }}" role="tab" data-toggle="tab" data-stype="{{ stype }}">{{ sname }}</a></li>
   {% endfor %}
 </ul>
 
 <div class="row">
   <svg class="graph"></svg>
+</div>
+
+<div>
+  <form id="graph-selection">
+    {% for race in races %}
+    <p><label>{{ race }}: <input type="checkbox" name="races" value="{{ race }}"{% if race in visible_races %} checked="checked"{% endif %} /></label></p>
+    {% endfor %}
+    <button type="button" value="Update">Update</button>
+  </form>
 </div>
 {% endblock %}
 
@@ -40,7 +49,6 @@
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script>
 var scores = {{ scores|safe }};
-var races = {{ races|safe }};
 var sections = {{ json_sections|safe }};
 var year_min = {{ year_min }};
 var year_max = {{ year_max }};
@@ -157,13 +165,31 @@ function graph_draw(stype, raceset) {
     legend.select("text").text(function(d) { return d; });
 }
 
+function update_url($form) {
+    location.replace('?' + $form.serialize());
+}
+
+function draw_from_form($form) {
+    var races = [];
+    var stype = "score";
+    $.each($form.serializeArray(), function (index, value) {
+        if ( value['name'] === "races" ) { races.push(value['value']); }
+        if ( value['name'] === "stype" ) { stype = value['value']; }
+    });
+    graph_draw(stype, races);
+}
+
 $("a[data-toggle='tab']").on("shown.bs.tab", function (e) {
     var stype = $(e.target).data("stype");
-    graph_draw(stype, races);
+    draw_from_form($("form#graph-selection"));
+});
+
+$("form#graph-selection button").click(function (e) {
+    draw_from_form($(this).parent());
 });
 
 $( document ).ready(function() {
-    $("a#tab-score").tab("show");
+    draw_from_form($("form#graph-selection"));
 });
 </script>
 {% endblock %}
