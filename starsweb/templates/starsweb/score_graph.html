@@ -16,6 +16,10 @@
     stroke: steelblue;
     stroke-width: 1.5px;
   }
+
+  .focus .line {
+    clip-path: url(#clip);
+  }
 </style>
 {% endblock %}
 
@@ -56,18 +60,30 @@ var year_max = {{ year_max }};
 </script>
 
 <script>
-var margin = {top: 20, right: 130, bottom: 40, left: 80},
+var margin = {top: 20, right: 130, bottom: 140, left: 80},
+    margin2 = {top: 485, right: 130, bottom: 40, left: 80},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    height = 600 - margin.top - margin.bottom,
+    height2 = 600 - margin2.top - margin2.bottom;
 
 var x = d3.scale.linear()
     .range([0, width])
     .domain([year_min, year_max]);
+var x2 = d3.scale.linear()
+    .range([0, width])
+    .domain([year_min, year_max]);
 var y = d3.scale.linear()
     .range([height, 0]);
+var y2 = d3.scale.linear()
+    .range([height2, 0]);
 
 var xAxis = d3.svg.axis()
     .scale(x)
+    .tickFormat(d3.format("d"))
+    .orient("bottom");
+
+var xAxis2 = d3.svg.axis()
+    .scale(x2)
     .tickFormat(d3.format("d"))
     .orient("bottom");
 
@@ -75,30 +91,90 @@ var yAxis = d3.svg.axis()
     .scale(y)
     .orient("left");
 
-var svg = d3.select("svg.graph")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-  .append("text")
-    .style("text-anchor", "middle")
-    .attr("transform", "translate(" + (width / 2) + "," + margin.bottom + ")")
-    .text("Year")
-
-svg.append("g")
-    .attr("class", "y axis")
-  .append("text")
-    .style("text-anchor", "middle")
-    .attr("transform", "translate(" + (12 - margin.left) + "," + (height / 2) + ") rotate(-90)")
+var brush = d3.svg.brush()
+    .x(x2)
+    .on("brush", brushed);
 
 var line = d3.svg.line()
     .x(function(d) { return x(d.key); })
     .y(function(d) { return y(d.value); });
 
+var line2 = d3.svg.line()
+    .x(function(d) { return x2(d.key); })
+    .y(function(d) { return y2(d.value); });
+
+var svg = d3.select("svg.graph")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+svg.append("defs").append("clipPath")
+    .attr("id", "clip")
+  .append("rect")
+    .attr("width", width)
+    .attr("height", height);
+var focus = svg.append("g")
+    .attr("class", "focus")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+focus.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+focus.append("g")
+    .attr("class", "y axis")
+  .append("text")
+    .style("text-anchor", "middle")
+    .attr("transform", "translate(" + (12 - margin.left) + "," + (height / 2) + ") rotate(-90)")
+
+var context = svg.append("g")
+    .attr("class", "context")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+context.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height2 + ")")
+    .call(xAxis2)
+  .append("text")
+    .style("text-anchor", "middle")
+    .attr("transform", "translate(" + (width / 2) + "," + margin2.bottom + ")")
+    .text("Year");
+
+context.append("g")
+    .attr("class", "x brush")
+    .call(brush)
+  .selectAll("rect")
+    .attr("y", -6)
+    .attr("height", height2 + 7);
+
+
+function brushed() {
+    var domain = brush.empty() ? x2.domain() : brush.extent();
+    var form = parse_form($("form#graph-selection"));
+    var data = [];
+
+    $.each(form.races, function(index, value) {
+        var values = {};
+        $.each(scores[form.stype][value], function(key, v) {
+            if ( +key >= domain[0] && +key <= domain[1] ) { values[key] = v; }
+        });
+        data[index] = {"race": value, "values": values};
+    });
+
+    if ( form.stype === "rank" ) {
+        y.domain([d3.max(data, function(d) { return d3.max(d3.values(d.values)); }), 1]);
+    } else {
+        y.domain([0, d3.max(data, function(d) { return d3.max(d3.values(d.values)); })]);
+    }
+    svg.select("g.y.axis")
+        .call(yAxis);
+
+    x.domain(domain)
+        .range([0, width]);
+    focus.selectAll("g.race path")
+        .attr("d", function(d) { return line(d3.entries(d.values)); });
+    focus.select("g.x.axis").call(xAxis);
+}
 
 function graph_draw(stype, raceset) {
     if (raceset.length <= 10) {
@@ -119,16 +195,15 @@ function graph_draw(stype, raceset) {
     } else {
         y.domain([0, d3.max(data, function(d) { return d3.max(d3.values(d.values)); })]);
     }
+    y2.domain(y.domain());
 
-    svg.select("g.x.axis")
-        .call(xAxis);
     svg.select("g.y.axis")
         .call(yAxis);
 
     svg.select("g.y.axis > text")
         .text(sections[stype]);
 
-    var race = svg.selectAll(".race")
+    var race = focus.selectAll(".race")
         .data(data, function(d) { return d.race; });
 
     race.exit().remove();
@@ -142,7 +217,21 @@ function graph_draw(stype, raceset) {
         .attr("d", function(d) { return line(d3.entries(d.values)); })
         .style("stroke", function(d) { return color(d.race); });
 
-    var legend = svg.selectAll(".legend")
+    var race2 = context.selectAll(".race")
+        .data(data, function(d) { return d.race; });
+
+    race2.exit().remove();
+
+    race2.enter().append("g")
+        .attr("class", "race")
+      .append("path")
+        .attr("class", "line");
+
+    race2.select("path")
+        .attr("d", function(d) { return line2(d3.entries(d.values)); })
+        .style("stroke", function(d) { return color(d.race); });
+
+    var legend = focus.selectAll(".legend")
         .data(raceset);
 
     legend.exit().remove();
@@ -164,34 +253,38 @@ function graph_draw(stype, raceset) {
 
     legend.select("rect").style("fill", color);
     legend.select("text").text(function(d) { return d; });
+
+    brushed();
 }
 
 function update_url($form) {
     location.replace('?' + $form.serialize());
 }
 
-function draw_from_form($form) {
-    var races = [];
-    var stype = "score";
+function parse_form($form) {
+    var data = {"stype": "score", "races": []};
     $.each($form.serializeArray(), function (index, value) {
-        if ( value['name'] === "races" ) { races.push(value['value']); }
-        if ( value['name'] === "section" && value['value'] ) { stype = value['value']; }
+        if ( value['name'] === "races" ) { data.races.push(value['value']); }
+        if ( value['name'] === "section" && value['value'] ) { data.stype = value['value']; }
     });
-    graph_draw(stype, races);
+    return data;
 }
 
 $("a[data-toggle='tab']").on("shown.bs.tab", function (e) {
     var stype = $(e.target).data("stype");
     $("form input[name='section']").val(stype);
-    draw_from_form($("form#graph-selection"));
+    var data = parse_form($("form#graph-selection"));
+    graph_draw(data.stype, data.races);
 });
 
 $("form#graph-selection button").click(function (e) {
-    draw_from_form($(this).parent());
+    var data = parse_form($(this).parent());
+    graph_draw(data.stype, data.races);
 });
 
 $( document ).ready(function() {
-    draw_from_form($("form#graph-selection"));
+    var data = parse_form($("form#graph-selection"));
+    graph_draw(data.stype, data.races);
 });
 </script>
 {% endblock %}
