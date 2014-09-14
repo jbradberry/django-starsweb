@@ -46,6 +46,8 @@
 <div id="race-bar">
   <form id="graph-selection">
     <input type="hidden" name="section" value="{{ section }}" />
+    <input type="hidden" name="from_year" value="{{ from_year }}" />
+    <input type="hidden" name="to_year" value="{{ to_year }}" />
     <div class="btn-group" data-toggle="buttons">
         {% for race in races %}
         <label class="btn btn-primary{% if race in visible_races %} active{% endif %}">
@@ -159,18 +161,31 @@ context.append("g")
 
 function brushed() {
     var domain = brush.empty() ? x2.domain() : brush.extent();
-    var form = parse_form($("form#graph-selection"));
+    var $form = $("form#graph-selection");
+    var formdata = parse_form($form);
     var data = [];
 
-    $.each(form.races, function(index, value) {
+    var from_year = domain[0],
+        to_year = domain[1];
+
+    if ( brush.empty() ) {
+        from_year = '';
+        to_year = '';
+    }
+
+    $form.find("input[name='from_year']").val(from_year);
+    $form.find("input[name='to_year']").val(to_year);
+    update_permalink_url($form);
+
+    $.each(formdata.races, function(index, value) {
         var values = {};
-        $.each(scores[form.stype][value], function(key, v) {
+        $.each(scores[formdata.stype][value], function(key, v) {
             if ( +key >= domain[0] && +key <= domain[1] ) { values[key] = v; }
         });
         data[index] = {"race": value, "values": values};
     });
 
-    if ( form.stype === "rank" ) {
+    if ( formdata.stype === "rank" ) {
         y.domain([d3.max(data, function(d) { return d3.max(d3.values(d.values)); }), 1]);
     } else {
         y.domain([0, d3.max(data, function(d) { return d3.max(d3.values(d.values)); })]);
@@ -298,6 +313,14 @@ $("form#graph-selection input:checkbox").change(function (e) {
 $( document ).ready(function() {
     var $form = $("form#graph-selection");
     var data = parse_form($form);
+
+    var from_year = $form.find("input[name='from_year']").val(),
+        to_year = $form.find("input[name='to_year']").val();
+    if ( from_year && to_year ) {
+        brush.extent([+from_year, +to_year]);
+        svg.select(".brush").call(brush);
+    }
+
     update_permalink_url($form);
     graph_draw(data.stype, data.races);
 });

@@ -543,6 +543,8 @@ class ScoreGraphView(DetailView):
             'races': races,
             'visible_races': self.request.GET.getlist('races', races),
             'section': self.request.GET.get('section', 'score'),
+            'from_year': self.request.GET.get('from_year', ''),
+            'to_year': self.request.GET.get('to_year', ''),
         })
 
         scores = models.Score.objects.select_related(
