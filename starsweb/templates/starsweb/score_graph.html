@@ -20,6 +20,10 @@
   .focus .line {
     clip-path: url(#clip);
   }
+
+  div#race-bar {
+    margin: 15px 0 0 80px;
+  }
 </style>
 {% endblock %}
 
@@ -35,19 +39,22 @@
   {% endfor %}
 </ul>
 
-<div class="row">
+<div>
   <svg class="graph"></svg>
 </div>
 
-<div>
+<div id="race-bar">
   <form id="graph-selection">
     <input type="hidden" name="section" value="{{ section }}" />
-    {% for race in races %}
-    <p><label>{{ race }}: <input type="checkbox" name="races" value="{{ race }}"{% if race in visible_races %} checked="checked"{% endif %} /></label></p>
-    {% endfor %}
-    <button type="button" value="Update">Update</button>
+    <div class="btn-group" data-toggle="buttons">
+        {% for race in races %}
+        <label class="btn btn-primary{% if race in visible_races %} active{% endif %}">
+        <input type="checkbox" name="races" value="{{ race }}"{% if race in visible_races %} checked="checked"{% endif %} />{{ race }}
+        </label>
+        {% endfor %}
+    </div>
   </form>
-</div>
+<div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -277,8 +284,8 @@ $("a[data-toggle='tab']").on("shown.bs.tab", function (e) {
     graph_draw(data.stype, data.races);
 });
 
-$("form#graph-selection button").click(function (e) {
-    var data = parse_form($(this).parent());
+$("form#graph-selection input:checkbox").change(function (e) {
+    var data = parse_form($("form#graph-selection"));
     graph_draw(data.stype, data.races);
 });
 
