@@ -55,6 +55,8 @@
     </div>
   </form>
 <div>
+
+<p><a id="graph-permalink" href="">Permalink</a></p>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -264,8 +266,8 @@ function graph_draw(stype, raceset) {
     brushed();
 }
 
-function update_url($form) {
-    location.replace('?' + $form.serialize());
+function update_permalink_url($form) {
+    $("#graph-permalink").attr("href", "?" + $form.serialize());
 }
 
 function parse_form($form) {
@@ -278,19 +280,25 @@ function parse_form($form) {
 }
 
 $("a[data-toggle='tab']").on("shown.bs.tab", function (e) {
+    var $form = $("form#graph-selection")
     var stype = $(e.target).data("stype");
-    $("form input[name='section']").val(stype);
-    var data = parse_form($("form#graph-selection"));
+    $form.find("input[name='section']").val(stype);
+    var data = parse_form($form);
+    update_permalink_url($form);
     graph_draw(data.stype, data.races);
 });
 
 $("form#graph-selection input:checkbox").change(function (e) {
-    var data = parse_form($("form#graph-selection"));
+    var $form = $("form#graph-selection")
+    var data = parse_form($form);
+    update_permalink_url($form);
     graph_draw(data.stype, data.races);
 });
 
 $( document ).ready(function() {
-    var data = parse_form($("form#graph-selection"));
+    var $form = $("form#graph-selection");
+    var data = parse_form($form);
+    update_permalink_url($form);
     graph_draw(data.stype, data.races);
 });
 </script>
