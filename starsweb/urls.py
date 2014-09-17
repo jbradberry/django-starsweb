@@ -61,6 +61,10 @@ urlpatterns = patterns('',
         views.OrderFileDownload.as_view(), name='orders_download'),
     url(r'^game/(?P<game_slug>[-\w]+)/orders/(?P<race_slug>[-\w]+)/upload/$',
         views.OrderFileUpload.as_view(), name='orders_upload'),
+    url(r'^game/(?P<game_slug>[-\w]+)/history/(?P<race_slug>[-\w]+)/download/$',
+        views.HistoryFileDownload.as_view(), name='history_download'),
+    url(r'^game/(?P<game_slug>[-\w]+)/history/(?P<race_slug>[-\w]+)/upload/$',
+        views.HistoryFileUpload.as_view(), name='history_upload'),
 )
 
 if 'micropress' in settings.INSTALLED_APPS:

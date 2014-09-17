@@ -204,6 +204,23 @@ class OrderFileForm(forms.ModelForm):
         return f
 
 
+class HistoryFileForm(forms.ModelForm):
+    class Meta:
+        model = models.StarsFile
+        fields = ('file',)
+
+    def clean_file(self):
+        f = self.cleaned_data.get('file')
+
+        try:
+            self._sfile = models.StarsFile.parse(f.read(), type='h')
+        except (base.StarsError, Exception):
+            raise forms.ValidationError("Not a valid Stars history file.")
+
+        self.instance.type = 'h'
+        return f
+
+
 class RacePageForm(forms.ModelForm):
     set_as_homepage = forms.BooleanField(required=False)
 

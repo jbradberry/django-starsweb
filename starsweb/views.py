@@ -1071,3 +1071,98 @@ class OrderFileUpload(ParentRaceMixin, CreateView):
         self.raceturn = raceturn.get()
 
         return super(OrderFileUpload, self).post(request, *args, **kwargs)
+
+
+class HistoryFileDownload(ParentRaceMixin, View):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(HistoryFileDownload, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user).exists():
+            return HttpResponseForbidden(
+                "Not authorized to download files for this race.")
+
+        current = self.game.current_turn
+        if current is None:
+            raise Http404("No history file available.")
+
+        raceturn = current.raceturns.filter(race=self.race, hfile__isnull=False)
+        if not raceturn:
+            raise Http404("No history file available.")
+
+        raceturn = raceturn.get()
+
+        return sendfile(
+            self.request, raceturn.hfile.file.path, attachment=True,
+            attachment_filename='{name}.h{num}'.format(
+                name=self.game.slug[:8], num=self.race.player_number + 1))
+
+
+class HistoryFileUpload(ParentRaceMixin, CreateView):
+    form_class = forms.HistoryFileForm
+    template_name = 'starsweb/historyfile_upload.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(HistoryFileUpload, self).dispatch(*args, **kwargs)
+
+    def get_success_url(self):
+        return self.game.get_absolute_url()
+
+    def form_valid(self, form):
+        form.instance.upload_user = self.request.user
+
+        response = super(HistoryFileUpload, self).form_valid(form)
+        self.raceturn.hfile = self.object
+        self.raceturn.save()
+
+        messages.success(
+            self.request,
+            "The history file has successfully been uploaded."
+        )
+        return response
+
+    def get(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to upload files for this race.")
+        if self.game.state not in ('A', 'P'):
+            return HttpResponseForbidden("Game is not active.")
+
+        self.current_turn = self.game.current_turn
+        if self.current_turn is None:
+            return Http404("Cannot currently upload a history file.")
+
+        raceturn = self.current_turn.raceturns.filter(race=self.race)
+        if not raceturn:
+            raise Http404("Cannot currently upload a history file.")
+        self.raceturn = raceturn.get()
+
+        return super(HistoryFileUpload, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.game = self.get_game()
+        self.race = self.get_race()
+        if not self.race.ambassadors.filter(user=self.request.user,
+                                            active=True).exists():
+            return HttpResponseForbidden(
+                "Not authorized to upload files for this race.")
+        if self.game.state not in ('A', 'P'):
+            return HttpResponseForbidden("Game is not active.")
+
+        self.current_turn = self.game.current_turn
+        if self.current_turn is None:
+            return Http404("Cannot currently upload a history file.")
+
+        raceturn = self.current_turn.raceturns.filter(race=self.race)
+        if not raceturn:
+            raise Http404("Cannot currently upload a history file.")
+        self.raceturn = raceturn.get()
+
+        return super(HistoryFileUpload, self).post(request, *args, **kwargs)
