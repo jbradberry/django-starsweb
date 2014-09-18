@@ -700,3 +700,13 @@ class Score(models.Model):
 
     def __unicode__(self):
         return u"{0}: {1}".format(self.get_section_display(), self.value)
+
+
+class Star(models.Model):
+    game = models.ForeignKey(Game)
+    name = models.CharField(max_length=18)
+    x = models.IntegerField()
+    y = models.IntegerField()
+
+    def __unicode__(self):
+        return u"{s.name} ({s.x}, {s.y})".format(s=self)
