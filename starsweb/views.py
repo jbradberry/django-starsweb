@@ -599,14 +599,10 @@ class UserRaceCreate(CreateView):
     def dispatch(self, *args, **kwargs):
         return super(UserRaceCreate, self).dispatch(*args, **kwargs)
 
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        try:
-            form.instance.full_clean()
-        except ValidationError as e:
-            form._update_errors(e.message_dict)
-            return self.form_invalid(form)
-        return super(UserRaceCreate, self).form_valid(form)
+    def get_form_kwargs(self):
+        kwargs = super(UserRaceCreate, self).get_form_kwargs()
+        kwargs['instance'] = self.model(user=self.request.user)
+        return kwargs
 
 
 class UserRaceUpdate(UpdateView):
@@ -617,15 +613,6 @@ class UserRaceUpdate(UpdateView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(UserRaceUpdate, self).dispatch(*args, **kwargs)
-
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        try:
-            form.instance.full_clean()
-        except ValidationError as e:
-            form._update_errors(e.message_dict)
-            return self.form_invalid(form)
-        return super(UserRaceUpdate, self).form_valid(form)
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()

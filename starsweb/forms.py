@@ -186,6 +186,11 @@ class UserRaceForm(forms.ModelForm):
         model = models.UserRace
         fields = ('identifier',)
 
+    def _get_validation_exclusions(self):
+        exclude = super(UserRaceForm, self)._get_validation_exclusions()
+        exclude.remove('user')
+        return exclude
+
 
 class OrderFileForm(forms.ModelForm):
     class Meta:
