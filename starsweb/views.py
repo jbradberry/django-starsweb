@@ -20,6 +20,11 @@ import json
 from . import models
 from . import forms
 
+from django import VERSION
+
+if VERSION[:2] == (1, 4):
+    from .shim14 import TemplateView
+
 
 class GameListView(ListView):
     queryset = models.Game.objects.select_related('turn').annotate(
