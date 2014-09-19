@@ -313,6 +313,10 @@ class GameMapDownloadTestCase(TestCase):
         self.download_url = reverse('game_mapdownload',
                                     kwargs={'game_slug': self.game.slug})
 
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
     def test_success(self):
         self.assertIsNotNone(self.game.mapfile)
         response = self.client.get(self.download_url)
