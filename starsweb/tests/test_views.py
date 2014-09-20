@@ -951,6 +951,98 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class RacePageViewTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin',
+                                             password='password')
+        self.client.login(username='admin', password='password')
+
+        self.game = models.Game(
+            name="Total War in Ulfland",
+            slug="total-war-in-ulfland",
+            host=self.user,
+            description="This *game* is foobared.",
+        )
+        self.game.save()
+        self.race1 = models.Race(game=self.game,
+                                 name='Gestalti',
+                                 plural_name='Gestalti',
+                                 slug='gestalti')
+        self.race1.save()
+        self.race2 = models.Race(game=self.game,
+                                 name='Phizz',
+                                 plural_name='Phizz',
+                                 slug='phizz')
+        self.race2.save()
+
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
+    def test_game_does_not_exist(self):
+        self.assertEqual(models.RacePage.objects.count(), 0)
+
+        page_url = reverse('race_homepage',
+                           kwargs={'game_slug': '500-years-after',
+                                   'race_slug': 'gestalti'})
+        response = self.client.get(page_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_race_does_not_exist(self):
+        page_url = reverse('race_homepage',
+                           kwargs={'game_slug': 'total-war-in-ulfland',
+                                   'race_slug': 'ssg'})
+        response = self.client.get(page_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_race_has_no_default_page(self):
+        page_url = reverse('race_homepage',
+                           kwargs={'game_slug': 'total-war-in-ulfland',
+                                   'race_slug': 'phizz'})
+        response = self.client.get(page_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_race_has_default_page(self):
+        racepage = models.RacePage(race=self.race1,
+                                   title="The Gestalti Government",
+                                   body="Who knows?")
+        racepage.save()
+
+        self.race1.homepage = racepage
+        self.race1.save()
+
+        page_url = reverse('race_homepage',
+                           kwargs={'game_slug': 'total-war-in-ulfland',
+                                   'race_slug': 'gestalti'})
+        response = self.client.get(page_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The Gestalti Government")
+        self.assertContains(response, "Who knows?")
+
+    def test_race_does_not_have_specified_page(self):
+        page_url = reverse('race_page',
+                           kwargs={'game_slug': 'total-war-in-ulfland',
+                                   'race_slug': 'phizz',
+                                   'slug': '5-minute-war'})
+        response = self.client.get(page_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_existing_race_page(self):
+        racepage = models.RacePage(race=self.race1,
+                                   title="The Gestalti Government",
+                                   body="Who knows?")
+        racepage.save()
+
+        page_url = reverse('race_page',
+                           kwargs={'game_slug': 'total-war-in-ulfland',
+                                   'race_slug': 'gestalti',
+                                   'slug': 'the-gestalti-government'})
+        response = self.client.get(page_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The Gestalti Government")
+        self.assertContains(response, "Who knows?")
+
+
 class RaceDashboardViewTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='password')
