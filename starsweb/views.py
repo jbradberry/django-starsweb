@@ -101,7 +101,7 @@ class ParentGameMixin(object):
         try:
             return game_queryset.get()
         except models.Game.DoesNotExist:
-            raise Http404("No game found matching the query.")
+            raise Http404
 
     def get_context_data(self, **kwargs):
         context = {self.context_game_name: self.game}
@@ -134,7 +134,7 @@ class ParentRaceMixin(ParentGameMixin):
         try:
             return race_queryset.get()
         except models.Race.DoesNotExist:
-            raise Http404("No race found matching the query.")
+            raise Http404
 
     def get_context_data(self, **kwargs):
         context = {self.context_race_name: self.race}
@@ -146,7 +146,7 @@ class GameMapDownload(ParentGameMixin, View):
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.mapfile is None:
-            raise Http404("No map file available.")
+            raise Http404
         return sendfile(
             self.request, self.game.mapfile.file.path, attachment=True,
             attachment_filename='{name}.xy'.format(name=self.game.slug[:8]))
@@ -756,7 +756,7 @@ class UserRaceMixin(object):
         try:
             userrace = models.UserRace.objects.get(pk=pk)
         except models.UserRace.DoesNotExist:
-            raise Http404("No race found matching the query.")
+            raise Http404
 
         return userrace
 
@@ -772,7 +772,7 @@ class UserRaceDownload(UserRaceMixin, View):
             return HttpResponseForbidden(
                 "Not authorized to download this race file.")
         if self.userrace.racefile is None:
-            raise Http404("No race file available.")
+            raise Http404
         return sendfile(
             self.request, self.userrace.racefile.file.path, attachment=True,
             attachment_filename='{name}.r1'.format(
@@ -869,7 +869,7 @@ class RaceFileDownload(ParentRaceMixin, View):
         elif self.race.racefile is not None:
             racefile = self.race.racefile
         else:
-            raise Http404("No race file available.")
+            raise Http404
 
         return sendfile(
             self.request, self.race.racefile.file.path, attachment=True,
@@ -956,11 +956,11 @@ class StateFileDownload(ParentRaceMixin, View):
 
         current = self.game.current_turn
         if current is None:
-            raise Http404("No turn file available.")
+            raise Http404
 
         raceturn = current.raceturns.filter(race=self.race, mfile__isnull=False)
         if not raceturn:
-            raise Http404("No turn file available.")
+            raise Http404
 
         raceturn = raceturn.get()
 
@@ -984,11 +984,11 @@ class OrderFileDownload(ParentRaceMixin, View):
 
         current = self.game.current_turn
         if current is None:
-            raise Http404("No turn file available.")
+            raise Http404
 
         raceturn = current.raceturns.filter(race=self.race, xfile__isnull=False)
         if not raceturn:
-            raise Http404("No turn file available.")
+            raise Http404
 
         raceturn = raceturn.get()
 
@@ -1034,11 +1034,11 @@ class OrderFileUpload(ParentRaceMixin, CreateView):
 
         self.current_turn = self.game.current_turn
         if self.current_turn is None:
-            return Http404("Cannot currently upload an order file.")
+            raise Http404
 
         raceturn = self.current_turn.raceturns.filter(race=self.race)
         if not raceturn:
-            raise Http404("Cannot currently upload an order file.")
+            raise Http404
         self.raceturn = raceturn.get()
 
         return super(OrderFileUpload, self).get(request, *args, **kwargs)
@@ -1055,11 +1055,11 @@ class OrderFileUpload(ParentRaceMixin, CreateView):
 
         self.current_turn = self.game.current_turn
         if self.current_turn is None:
-            return Http404("Cannot currently upload an order file.")
+            raise Http404
 
         raceturn = self.current_turn.raceturns.filter(race=self.race)
         if not raceturn:
-            raise Http404("Cannot currently upload an order file.")
+            raise Http404
         self.raceturn = raceturn.get()
 
         return super(OrderFileUpload, self).post(request, *args, **kwargs)
@@ -1079,11 +1079,11 @@ class HistoryFileDownload(ParentRaceMixin, View):
 
         current = self.game.current_turn
         if current is None:
-            raise Http404("No history file available.")
+            raise Http404
 
         raceturn = current.raceturns.filter(race=self.race, hfile__isnull=False)
         if not raceturn:
-            raise Http404("No history file available.")
+            raise Http404
 
         raceturn = raceturn.get()
 
@@ -1129,11 +1129,11 @@ class HistoryFileUpload(ParentRaceMixin, CreateView):
 
         self.current_turn = self.game.current_turn
         if self.current_turn is None:
-            return Http404("Cannot currently upload a history file.")
+            return Http404
 
         raceturn = self.current_turn.raceturns.filter(race=self.race)
         if not raceturn:
-            raise Http404("Cannot currently upload a history file.")
+            raise Http404
         self.raceturn = raceturn.get()
 
         return super(HistoryFileUpload, self).get(request, *args, **kwargs)
@@ -1150,11 +1150,11 @@ class HistoryFileUpload(ParentRaceMixin, CreateView):
 
         self.current_turn = self.game.current_turn
         if self.current_turn is None:
-            return Http404("Cannot currently upload a history file.")
+            return Http404
 
         raceturn = self.current_turn.raceturns.filter(race=self.race)
         if not raceturn:
-            raise Http404("Cannot currently upload a history file.")
+            raise Http404
         self.raceturn = raceturn.get()
 
         return super(HistoryFileUpload, self).post(request, *args, **kwargs)
