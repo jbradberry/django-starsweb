@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from django.template.defaultfilters import slugify
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse_lazy
-from django.http import Http404, HttpResponseForbidden
+from django.http import Http404
 from django.core.files.base import ContentFile
 from django.contrib import messages
 from django.db.models import Max
@@ -172,15 +172,13 @@ class GameAdminView(ParentGameMixin, UpdateView):
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.host != self.request.user:
-            return HttpResponseForbidden(
-                "You do not have permission to configure this game.")
+            raise PermissionDenied
         return super(GameAdminView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.host != self.request.user:
-            return HttpResponseForbidden(
-                "You do not have permission to configure this game.")
+            raise PermissionDenied
         return super(GameAdminView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -202,7 +200,7 @@ class GameJoinView(ParentGameMixin, CreateView):
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.state != 'S':
-            return HttpResponseForbidden("Game is no longer in setup.")
+            raise PermissionDenied
 
         self.object = None
         form_class = self.get_form_class()
@@ -217,7 +215,7 @@ class GameJoinView(ParentGameMixin, CreateView):
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.state != 'S':
-            return HttpResponseForbidden("Game is no longer in setup.")
+            raise PermissionDenied
 
         self.object = None
         form_class = self.get_form_class()
@@ -266,13 +264,13 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.state != 'S':
-            return HttpResponseForbidden("Game is no longer in setup.")
+            raise PermissionDenied
         return super(RaceUpdateView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.state != 'S':
-            return HttpResponseForbidden("Game is no longer in setup.")
+            raise PermissionDenied
         return super(RaceUpdateView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -333,14 +331,14 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.state == 'F':
-            return HttpResponseForbidden("Game has concluded.")
+            raise PermissionDenied
         self.race = self.get_race()
         return super(AmbassadorUpdateView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.state == 'F':
-            return HttpResponseForbidden("Game has concluded.")
+            raise PermissionDenied
         self.race = self.get_race()
         return super(AmbassadorUpdateView, self).post(request, *args, **kwargs)
 
@@ -377,10 +375,9 @@ class RacePageCreate(ParentRaceMixin, CreateView):
 
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to create pages for this race.")
+            raise PermissionDenied
         if self.game.state == 'F':
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         return super(RacePageCreate, self).get(request, *args, **kwargs)
 
@@ -390,10 +387,9 @@ class RacePageCreate(ParentRaceMixin, CreateView):
 
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to create pages for this race.")
+            raise PermissionDenied
         if self.game.state == 'F':
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         return super(RacePageCreate, self).post(request, *args, **kwargs)
 
@@ -423,10 +419,9 @@ class RacePageUpdate(ParentRaceMixin, UpdateView):
 
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to update pages for this race.")
+            raise PermissionDenied
         if self.game.state == 'F':
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         return super(RacePageUpdate, self).get(request, *args, **kwargs)
 
@@ -436,10 +431,9 @@ class RacePageUpdate(ParentRaceMixin, UpdateView):
 
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to update pages for this race.")
+            raise PermissionDenied
         if self.game.state == 'F':
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         return super(RacePageUpdate, self).post(request, *args, **kwargs)
 
@@ -470,10 +464,9 @@ class RacePageDelete(ParentRaceMixin, DeleteView):
 
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to delete pages for this race.")
+            raise PermissionDenied
         if self.game.state == 'F':
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         return super(RacePageDelete, self).get(request, *args, **kwargs)
 
@@ -483,10 +476,9 @@ class RacePageDelete(ParentRaceMixin, DeleteView):
 
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to delete pages for this race.")
+            raise PermissionDenied
         if self.game.state == 'F':
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         self.race.homepage = None
         self.race.save()
@@ -622,15 +614,13 @@ class UserRaceUpdate(UpdateView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         if self.object.user != self.request.user:
-            return HttpResponseForbidden(
-                "Not authorized to update this user race.")
+            raise PermissionDenied
         return super(UserRaceUpdate, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         if self.object.user != self.request.user:
-            return HttpResponseForbidden(
-                "Not authorized to update this user race.")
+            raise PermissionDenied
         return super(UserRaceUpdate, self).post(request, *args, **kwargs)
 
 
@@ -645,15 +635,13 @@ class UserRaceDelete(DeleteView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         if self.object.user != self.request.user:
-            return HttpResponseForbidden(
-                "Not authorized to delete this user race.")
+            raise PermissionDenied
         return super(UserRaceDelete, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         if self.object.user != self.request.user:
-            return HttpResponseForbidden(
-                "Not authorized to delete this user race.")
+            raise PermissionDenied
         return super(UserRaceDelete, self).post(request, *args, **kwargs)
 
 
@@ -689,13 +677,13 @@ class RaceFileBind(ParentGameMixin, UpdateView):
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.state != 'S':
-            return HttpResponseForbidden("Game is no longer in setup.")
+            raise PermissionDenied
         return super(RaceFileBind, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
         if self.game.state != 'S':
-            return HttpResponseForbidden("Game is no longer in setup.")
+            raise PermissionDenied
         return super(RaceFileBind, self).post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -769,8 +757,7 @@ class UserRaceDownload(UserRaceMixin, View):
     def get(self, request, *args, **kwargs):
         self.userrace = self.get_userrace()
         if self.userrace.user != self.request.user:
-            return HttpResponseForbidden(
-                "Not authorized to download this race file.")
+            raise PermissionDenied
         if self.userrace.racefile is None:
             raise Http404
         return sendfile(
@@ -792,13 +779,13 @@ class UserRaceUpload(UserRaceMixin, CreateView):
     def get(self, request, *args, **kwargs):
         self.userrace = self.get_userrace()
         if self.userrace.user != self.request.user:
-            return HttpResponseForbidden("Not authorized to upload.")
+            raise PermissionDenied
         return super(UserRaceUpload, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.userrace = self.get_userrace()
         if self.userrace.user != self.request.user:
-            return HttpResponseForbidden("Not authorized to upload.")
+            raise PermissionDenied
         response = super(UserRaceUpload, self).post(request, *args, **kwargs)
         self.userrace.racefile = self.object
         self.userrace.save()
@@ -861,8 +848,7 @@ class RaceFileDownload(ParentRaceMixin, View):
         self.game = self.get_game()
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user).exists():
-            return HttpResponseForbidden(
-                "Not authorized to download files for this race.")
+            raise PermissionDenied
 
         if self.race.official_racefile is not None:
             racefile = self.race.official_racefile
@@ -924,10 +910,9 @@ class RaceFileUpload(ParentRaceMixin, CreateView):
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to upload files for this race.")
+            raise PermissionDenied
         if self.game.state != 'S':
-            return HttpResponseForbidden("Game is no longer in setup.")
+            raise PermissionDenied
         return super(RaceFileUpload, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -935,10 +920,9 @@ class RaceFileUpload(ParentRaceMixin, CreateView):
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to upload files for this race.")
+            raise PermissionDenied
         if self.game.state != 'S':
-            return HttpResponseForbidden("Game is no longer in setup.")
+            raise PermissionDenied
         return super(RaceFileUpload, self).post(request, *args, **kwargs)
 
 
@@ -951,8 +935,7 @@ class StateFileDownload(ParentRaceMixin, View):
         self.game = self.get_game()
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user).exists():
-            return HttpResponseForbidden(
-                "Not authorized to download files for this race.")
+            raise PermissionDenied
 
         current = self.game.current_turn
         if current is None:
@@ -979,8 +962,7 @@ class OrderFileDownload(ParentRaceMixin, View):
         self.game = self.get_game()
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user).exists():
-            return HttpResponseForbidden(
-                "Not authorized to download files for this race.")
+            raise PermissionDenied
 
         current = self.game.current_turn
         if current is None:
@@ -1027,10 +1009,9 @@ class OrderFileUpload(ParentRaceMixin, CreateView):
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to upload files for this race.")
+            raise PermissionDenied
         if self.game.state not in ('A', 'P'):
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         self.current_turn = self.game.current_turn
         if self.current_turn is None:
@@ -1048,10 +1029,9 @@ class OrderFileUpload(ParentRaceMixin, CreateView):
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to upload files for this race.")
+            raise PermissionDenied
         if self.game.state not in ('A', 'P'):
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         self.current_turn = self.game.current_turn
         if self.current_turn is None:
@@ -1074,8 +1054,7 @@ class HistoryFileDownload(ParentRaceMixin, View):
         self.game = self.get_game()
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user).exists():
-            return HttpResponseForbidden(
-                "Not authorized to download files for this race.")
+            raise PermissionDenied
 
         current = self.game.current_turn
         if current is None:
@@ -1122,10 +1101,9 @@ class HistoryFileUpload(ParentRaceMixin, CreateView):
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to upload files for this race.")
+            raise PermissionDenied
         if self.game.state not in ('A', 'P'):
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         self.current_turn = self.game.current_turn
         if self.current_turn is None:
@@ -1143,10 +1121,9 @@ class HistoryFileUpload(ParentRaceMixin, CreateView):
         self.race = self.get_race()
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
-            return HttpResponseForbidden(
-                "Not authorized to upload files for this race.")
+            raise PermissionDenied
         if self.game.state not in ('A', 'P'):
-            return HttpResponseForbidden("Game is not active.")
+            raise PermissionDenied
 
         self.current_turn = self.game.current_turn
         if self.current_turn is None:

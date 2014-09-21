@@ -1973,9 +1973,6 @@ class UserRaceDownloadTestCase(TestCase):
 
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 403)
-        self.assertContains(response,
-                            "Not authorized to download this race file.",
-                            status_code=403)
 
     def test_anonymous(self):
         self.client.logout()
@@ -2172,9 +2169,6 @@ class RaceFileDownloadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.filter(type='r').count(), 1)
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 403)
-        self.assertContains(response,
-                            "Not authorized to download files for this race.",
-                            status_code=403)
 
     def test_ambassador_no_longer_active(self):
         # allow players who are no longer active in a game to still
@@ -2490,9 +2484,6 @@ class StateFileDownloadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.filter(type='m').count(), 1)
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 403)
-        self.assertContains(response,
-                            "Not authorized to download files for this race.",
-                            status_code=403)
 
     def test_ambassador_no_longer_active(self):
         # Allow players who are no longer active in a game to still
@@ -2601,9 +2592,6 @@ class OrderFileDownloadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 403)
-        self.assertContains(response,
-                            "Not authorized to download files for this race.",
-                            status_code=403)
 
     def test_ambassador_no_longer_active(self):
         # Allow players who are no longer active in a game to still
@@ -2909,9 +2897,6 @@ class HistoryFileDownloadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.filter(type='h').count(), 1)
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 403)
-        self.assertContains(response,
-                            "Not authorized to download files for this race.",
-                            status_code=403)
 
     def test_ambassador_no_longer_active(self):
         # Allow players who are no longer active in a game to still
