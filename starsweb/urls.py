@@ -75,3 +75,11 @@ if 'micropress' in settings.INSTALLED_APPS:
                  app_name="micropress"),
          {'realm_content_type': 'starsweb.Game'}),
     )
+
+if 'turngeneration' in settings.INSTALLED_APPS:
+    urlpatterns += patterns('',
+        (r'^game/(?P<realm_slug>[-\w]+)/',
+         include('turngeneration.urls', namespace="starsweb",
+                 app_name="turngeneration"),
+         {'realm_content_type': 'starsweb.Game'}),
+    )
