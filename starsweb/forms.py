@@ -11,8 +11,7 @@ from . import models
 class CreateGameForm(forms.ModelForm):
     class Meta:
         model = models.Game
-        exclude = ('description_html', 'markup_type', 'host', 'created',
-                   'state', 'mapfile')
+        fields = ('name', 'slug', 'description', 'published')
 
 
 class AiPlayersWidget(forms.MultiWidget):
@@ -61,7 +60,13 @@ class GameOptionsForm(forms.ModelForm):
 
     class Meta:
         model = models.GameOptions
-        exclude = ('game', 'file_contents')
+        fields = ('universe_size', 'universe_density', 'starting_distance',
+                  'maximum_minerals', 'slow_tech', 'accelerated_bbs',
+                  'random_events', 'computer_alliances', 'public_scores',
+                  'galaxy_clumping', 'ai_players', 'percent_planets',
+                  'tech_level', 'tech_fields', 'score', 'exceeds_nearest_score',
+                  'production', 'capital_ships', 'highest_score_after_years',
+                  'num_criteria', 'min_turns_to_win')
 
 
 class RaceForm(forms.ModelForm):
@@ -151,7 +156,7 @@ class ChooseUserRaceForm(forms.ModelForm):
 class AmbassadorForm(forms.ModelForm):
     class Meta:
         model = models.Ambassador
-        exclude = ('race', 'user', 'active')
+        fields = ('name',)
 
 
 class RaceFileForm(forms.ModelForm):
