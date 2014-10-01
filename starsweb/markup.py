@@ -4,7 +4,7 @@ from django.conf import settings
 
 
 FORMATTERS = tuple((f, f) for f in formatter._filters.iterkeys())
-DEFAULT_MARKUP = getattr(settings, 'DEFAULT_MARKUP', "markdown")
+DEFAULT_MARKUP = getattr(settings, 'DEFAULT_MARKUP', "restructuredtext")
 MARKUP_FILTER_OPTS = getattr(settings, 'MARKUP_FILTER_OPTS', {})
 LXML_CLEAN_OPTS = getattr(settings, 'LXML_CLEAN_OPTS', {})
 

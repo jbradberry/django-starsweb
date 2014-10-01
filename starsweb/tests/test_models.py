@@ -87,7 +87,7 @@ class GameTestCase(TestCase):
         self.assertEqual(g.state, 'S')
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html,
-                         "<p>This <em>game</em> is foobared.</p>")
+                         "<p>This <em>game</em> is foobared.</p>\n")
         self.assertIsNotNone(g.options)
 
     def test_create_game_with_empty_description(self):
