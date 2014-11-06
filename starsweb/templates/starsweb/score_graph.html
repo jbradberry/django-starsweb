@@ -21,8 +21,8 @@
     clip-path: url(#clip);
   }
 
-  div#race-bar {
-    margin: 15px 0 0 80px;
+  .legend > rect {
+    shape-rendering: crispEdges;
   }
 </style>
 {% endblock %}
@@ -39,24 +39,12 @@
   {% endfor %}
 </ul>
 
-<div>
+<div id="score-graph" data-section="{{ section }}"
+                      data-from="{{ from_year }}"
+                      data-to="{{ to_year }}"
+                      data-races="{{ visible_races }}" >
   <svg class="graph"></svg>
 </div>
-
-<div id="race-bar">
-  <form id="graph-selection">
-    <input type="hidden" name="section" value="{{ section }}" />
-    <input type="hidden" name="from_year" value="{{ from_year }}" />
-    <input type="hidden" name="to_year" value="{{ to_year }}" />
-    <div class="btn-group" data-toggle="buttons">
-        {% for race in races %}
-        <label class="btn btn-primary{% if race in visible_races %} active{% endif %}">
-        <input type="checkbox" name="races" value="{{ race }}"{% if race in visible_races %} checked="checked"{% endif %} />{{ race }}
-        </label>
-        {% endfor %}
-    </div>
-  </form>
-<div>
 
 <p><a id="graph-permalink" href="">Permalink</a></p>
 {% endblock %}
@@ -66,8 +54,11 @@
 <script>
 var scores = {{ scores|safe }};
 var sections = {{ json_sections|safe }};
+var all_races = {{ races|safe }};
 var year_min = {{ year_min }};
 var year_max = {{ year_max }};
+
+var $graph = $("#score-graph");
 </script>
 
 <script>
@@ -107,14 +98,14 @@ var brush = d3.svg.brush()
     .on("brush", brushed);
 
 var line = d3.svg.line()
-    .x(function(d) { return x(d.key); })
-    .y(function(d) { return y(d.value); });
+    .x(function(d, i) { return x(i + year_min); })
+    .y(function(d, i) { return y(d); });
 
 var line2 = d3.svg.line()
-    .x(function(d) { return x2(d.key); })
-    .y(function(d) { return y2(d.value); });
+    .x(function(d, i) { return x2(i + year_min); })
+    .y(function(d, i) { return y2(d); });
 
-var svg = d3.select("svg.graph")
+var svg = d3.select('#score-graph > svg')
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom);
 
@@ -158,67 +149,55 @@ context.append("g")
     .attr("y", -6)
     .attr("height", height2 + 7);
 
+var color = all_races.length <= 10 ? d3.scale.category10() : d3.scale.category20();
+color.domain(all_races);
+
 
 function brushed() {
     var domain = brush.empty() ? x2.domain() : brush.extent();
-    var $form = $("form#graph-selection");
-    var formdata = parse_form($form);
-    var data = [];
-
     var from_year = domain[0],
         to_year = domain[1];
 
-    if ( brush.empty() ) {
-        from_year = '';
-        to_year = '';
-    }
+    var stype = $graph.data("section");
+    var visible_races = $graph.data("races");
+    if (visible_races.length === 0) { visible_races = all_races.slice(); }
 
-    $form.find("input[name='from_year']").val(from_year);
-    $form.find("input[name='to_year']").val(to_year);
-    update_permalink_url($form);
-
-    $.each(formdata.races, function(index, value) {
-        var values = {};
-        $.each(scores[formdata.stype][value], function(key, v) {
-            if ( +key >= domain[0] && +key <= domain[1] ) { values[key] = v; }
+    var max_value = d3.max(visible_races, function(r) {
+        return d3.max(scores[stype][r], function(v, i) {
+            var year = i + year_min;
+            if ( year >= from_year && year <= to_year ) { return v; }
         });
-        data[index] = {"race": value, "values": values};
     });
+    stype === "rank" ? y.domain([max_value, 1]) : y.domain([0, max_value]);
 
-    if ( formdata.stype === "rank" ) {
-        y.domain([d3.max(data, function(d) { return d3.max(d3.values(d.values)); }), 1]);
-    } else {
-        y.domain([0, d3.max(data, function(d) { return d3.max(d3.values(d.values)); })]);
-    }
     svg.select("g.y.axis")
         .call(yAxis);
 
     x.domain(domain)
         .range([0, width]);
     focus.selectAll("g.race path")
-        .attr("d", function(d) { return line(d3.entries(d.values)); });
+        .attr("d", function(d) { return line(d.values); });
     focus.select("g.x.axis").call(xAxis);
+
+    if ( brush.empty() ) {
+        from_year = '';
+        to_year = '';
+    }
+    $graph.data("from", from_year);
+    $graph.data("to", to_year);
+    update_permalink_url($graph);
 }
 
-function graph_draw(stype, raceset) {
-    if (raceset.length <= 10) {
-        var color = d3.scale.category10();
-    } else {
-        var color = d3.scale.category20();
-    }
-    color.domain(raceset);
-    raceset = color.domain().slice();
+function graph_draw() {
+    var stype = $graph.data("section");
+    var visible_races = $graph.data("races");
+    if (visible_races.length === 0) { visible_races = all_races.slice(); }
 
-    var data = [];
-    $.each(raceset, function(index, value) {
-        data[index] = {"race": value, "values": scores[stype][value]};
+    var max_value = d3.max(visible_races, function(r) {
+        return d3.max(scores[stype][r]);
     });
 
-    if ( stype === "rank" ) {
-        y.domain([d3.max(data, function(d) { return d3.max(d3.values(d.values)); }), 1]);
-    } else {
-        y.domain([0, d3.max(data, function(d) { return d3.max(d3.values(d.values)); })]);
-    }
+    stype === "rank" ? y.domain([max_value, 1]) : y.domain([0, max_value]);
     y2.domain(y.domain());
 
     svg.select("g.y.axis")
@@ -226,6 +205,11 @@ function graph_draw(stype, raceset) {
 
     svg.select("g.y.axis > text")
         .text(sections[stype]);
+
+    var data = [];
+    $.each(visible_races, function(i, race) {
+        data.push({"race": race, "values": scores[stype][race]});
+    });
 
     var race = focus.selectAll(".race")
         .data(data, function(d) { return d.race; });
@@ -238,7 +222,7 @@ function graph_draw(stype, raceset) {
         .attr("class", "line");
 
     race.select("path")
-        .attr("d", function(d) { return line(d3.entries(d.values)); })
+        .attr("d", function(d) { return line(d.values); })
         .style("stroke", function(d) { return color(d.race); });
 
     var race2 = context.selectAll(".race")
@@ -252,11 +236,11 @@ function graph_draw(stype, raceset) {
         .attr("class", "line");
 
     race2.select("path")
-        .attr("d", function(d) { return line2(d3.entries(d.values)); })
+        .attr("d", function(d) { return line2(d.values); })
         .style("stroke", function(d) { return color(d.race); });
 
     var legend = focus.selectAll(".legend")
-        .data(raceset);
+        .data(all_races);
 
     legend.exit().remove();
 
@@ -266,8 +250,9 @@ function graph_draw(stype, raceset) {
 
     new_legend.append("rect")
         .attr("x", width + 6)
-        .attr("width", 18)
-        .attr("height", 18);
+        .attr("width", 16)
+        .attr("height", 16)
+        .style("stroke-width", 2);
 
     new_legend.append("text")
         .attr("x", width + 28)
@@ -275,54 +260,68 @@ function graph_draw(stype, raceset) {
         .attr("dy", ".35em")
         .style("text-anchor", "start");
 
-    legend.select("rect").style("fill", color);
+    legend.select("rect")
+        .each(function(d, i) {
+            var display = ($.inArray(d, visible_races) != -1);
+            d3.select(this)
+                .style("fill", display ? color(d, i): "white")
+                .style("stroke", color(d, i));
+        });
     legend.select("text").text(function(d) { return d; });
 
     brushed();
 }
 
-function update_permalink_url($form) {
-    $("#graph-permalink").attr("href", "?" + $form.serialize());
-}
+function update_permalink_url() {
+    var section = $graph.data("section");
+    var from = $graph.data("from");
+    var to = $graph.data("to");
 
-function parse_form($form) {
-    var data = {"stype": "score", "races": []};
-    $.each($form.serializeArray(), function (index, value) {
-        if ( value['name'] === "races" ) { data.races.push(value['value']); }
-        if ( value['name'] === "section" && value['value'] ) { data.stype = value['value']; }
-    });
-    return data;
+    var params = {races: $graph.data("races")};
+    if (section !== "score") { params.section = section; }
+    if (from !== "") { params.from = from; }
+    if (to !== "") { params.to = to; }
+
+    var url = $.param(params);
+    $("#graph-permalink").attr("href", (url === "") ? "" : "?" + url);
 }
 
 $("a[data-toggle='tab']").on("shown.bs.tab", function (e) {
-    var $form = $("form#graph-selection")
     var stype = $(e.target).data("stype");
-    $form.find("input[name='section']").val(stype);
-    var data = parse_form($form);
-    update_permalink_url($form);
-    graph_draw(data.stype, data.races);
-});
-
-$("form#graph-selection input:checkbox").change(function (e) {
-    var $form = $("form#graph-selection")
-    var data = parse_form($form);
-    update_permalink_url($form);
-    graph_draw(data.stype, data.races);
+    $graph.data("section", stype);
+    update_permalink_url();
+    graph_draw();
 });
 
 $( document ).ready(function() {
-    var $form = $("form#graph-selection");
-    var data = parse_form($form);
-
-    var from_year = $form.find("input[name='from_year']").val(),
-        to_year = $form.find("input[name='to_year']").val();
+    var from_year = $graph.data("from"),
+        to_year = $graph.data("to");
     if ( from_year && to_year ) {
         brush.extent([+from_year, +to_year]);
         svg.select(".brush").call(brush);
     }
 
-    update_permalink_url($form);
-    graph_draw(data.stype, data.races);
+    update_permalink_url();
+    graph_draw();
+
+    $(".legend > rect").on("click", function (e) {
+        var visible_races = $graph.data("races");
+        if (visible_races.length === 0) { visible_races = all_races.slice(); }
+
+        var race = d3.select(e.target).data()[0];
+        var index = $.inArray(race, visible_races);
+
+        if (index == -1) {
+            visible_races.push(race);
+        } else {
+            visible_races.splice(index, 1);
+        }
+        if (visible_races.length === all_races.length) { visible_races = []; }
+        $graph.data("races", visible_races);
+
+        update_permalink_url();
+        graph_draw();
+    });
 });
 </script>
 {% endblock %}

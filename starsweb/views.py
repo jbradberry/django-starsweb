@@ -531,37 +531,40 @@ class ScoreGraphView(DetailView):
     template_name = 'starsweb/score_graph.html'
 
     def get_context_data(self, **kwargs):
-        context = {'sections': models.Score.NAMES,
-                   'json_sections': json.dumps(dict(models.Score.NAMES))}
-
-        races = list(self.object.races.values_list(
-            'plural_name', flat=True).order_by('id'))
-        context.update({
-            'races': races,
-            'visible_races': self.request.GET.getlist('races', races),
-            'section': self.request.GET.get('section', 'score'),
-            'from_year': self.request.GET.get('from_year', ''),
-            'to_year': self.request.GET.get('to_year', ''),
-        })
-
         scores = models.Score.objects.select_related(
             'turn', 'race'
         ).filter(
             turn__game=self.object
         ).values('section', 'turn__year', 'race__plural_name', 'value')
 
+        races = list(self.object.races.values_list(
+            'plural_name', flat=True).order_by('id'))
+
+        year_min = min(x['turn__year'] for x in scores)
+        year_max = max(x['turn__year'] for x in scores)
+
         score_data = {}
         for item in scores:
             section_set = score_data.setdefault(
                 models.Score.TOKEN_VALUES[item['section']], {})
-            race_set = section_set.setdefault(
-                item['race__plural_name'], {})
-            race_set[item['turn__year']] = item['value']
+            race_scores = section_set.setdefault(
+                item['race__plural_name'],
+                [None for x in xrange(year_min, year_max+1)])
+            race_scores[item['turn__year'] - year_min] = item['value']
 
-        context.update({'scores': json.dumps(score_data),
-                        'year_min': min(x['turn__year'] for x in scores),
-                        'year_max': max(x['turn__year'] for x in scores)})
-
+        context = {
+            'races': json.dumps(races),
+            'visible_races': json.dumps(
+                self.request.GET.getlist('races[]', [])),
+            'section': self.request.GET.get('section', 'score'),
+            'sections': models.Score.NAMES,
+            'json_sections': json.dumps(dict(models.Score.NAMES)),
+            'from_year': self.request.GET.get('from_year', ''),
+            'to_year': self.request.GET.get('to_year', ''),
+            'scores': json.dumps(score_data),
+            'year_min': year_min,
+            'year_max': year_max,
+        }
         context.update(kwargs)
         return super(ScoreGraphView, self).get_context_data(**context)
 
