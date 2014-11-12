@@ -1,11 +1,13 @@
 from operator import attrgetter
 import subprocess
+import threading
 import logging
 import os.path
 import uuid
 import glob
 import tempfile
 import shutil
+import shlex
 
 from django.contrib.contenttypes.models import ContentType
 from django.template.defaultfilters import slugify
@@ -192,11 +194,24 @@ class Game(models.Model):
         display = getattr(settings, 'DISPLAY', None)
         display = '' if display is None else "DISPLAY={0} ".format(display)
 
-        subprocess.call(
+        commandline = shlex.split(
             r'{display}wine C:\\stars\\stars\!.exe'
-            r' -a {winpath}game.def'.format(winpath=winpath, display=display),
-            shell=True
+            r' -a {winpath}game.def'.format(winpath=winpath, display=display)
         )
+
+        def target(cmd):
+            self._stars_process = subprocess.Popen(cmd)
+            self._stars_process.communicate()
+
+        thread = threading.Thread(target=target,
+                                  args=(commandline,))
+        thread.start()
+
+        thread.join(getattr(settings, 'STARSWEB_TIMEOUT', 5 * 60))
+        if thread.is_alive():
+            self._stars_process.terminate()
+            thread.join()
+            raise Exception("Stars! timed out.")
 
         host = self._process_host(path)
         self._process_activation(path, host)
@@ -244,11 +259,24 @@ class Game(models.Model):
         display = '' if display is None else "DISPLAY={0} ".format(display)
 
         # Call out to Stars to generate the new turn files.
-        subprocess.call(
+        commandline = shlex.split(
             r'{display}wine C:\\stars\\stars\!.exe'
-            r' -g {winpath}game.hst'.format(winpath=winpath, display=display),
-            shell=True
+            r' -g {winpath}game.hst'.format(winpath=winpath, display=display)
         )
+
+        def target(cmd):
+            self._stars_process = subprocess.Popen(cmd)
+            self._stars_process.communicate()
+
+        thread = threading.Thread(target=target,
+                                  args=(commandline,))
+        thread.start()
+
+        thread.join(getattr(settings, 'STARSWEB_TIMEOUT', 5 * 60))
+        if thread.is_alive():
+            self._stars_process.terminate()
+            thread.join()
+            raise Exception("Stars! timed out.")
 
         host = self._process_host(path)
         self._process_generation(path, host)
