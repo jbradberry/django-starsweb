@@ -1,3 +1,12 @@
+from operator import attrgetter
+import subprocess
+import logging
+import os.path
+import uuid
+import glob
+import tempfile
+import shutil
+
 from django.contrib.contenttypes.models import ContentType
 from django.template.defaultfilters import slugify
 from django.core.files.base import ContentFile
@@ -5,13 +14,6 @@ from django.core.urlresolvers import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.db import models
-
-from operator import attrgetter
-import subprocess
-import logging
-import os.path
-import uuid
-import glob
 
 from starslib import base
 
@@ -115,14 +117,38 @@ class Game(models.Model):
         if self.turns.exists():
             return self.turns.latest()
 
-    def activate(self, path):
-        # Move the game into active state.
-        if self.state != 'S':
+    def _tempdir_create(self):
+        # Create a temporary directory for Stars to work in.
+        path = tempfile.mkdtemp()
+        winpath = r'Z:{0}\\'.format(path.replace('/', r'\\'))
+
+        logger.info("Created temp directory for '{game.name}' (pk={game.pk}):"
+                    " {path}".format(game=self, path=path))
+        return path, winpath
+
+    def _tempdir_remove(self, path):
+        # Delete the temp directory.
+        shutil.rmtree(path)
+        logger.info("Deleted temp directory for '{game.name}' (pk={game.pk}):"
+                    " {path}".format(game=self, path=path))
+
+    def generate(self):
+        path, winpath = self._tempdir_create()
+
+        if self.state == 'S':
+            self._activate(path, winpath)
+        elif self.state in ('A', 'P'):
+            self._generate(path, winpath)
+        else:
             logger.error(
-                "Game activation attempted on game not in setup"
-                " '{game.name}' (pk={game.pk}).".format(game=self)
+                "Game generation attempted on inactive game '{game.name}'"
+                " (pk={game.pk}, state={game.state}).".format(game=self)
             )
-            return
+
+        self._tempdir_remove(path)
+
+    def _activate(self, path, winpath):
+        # Move the game into active state.
         self.state = 'A'
         self.save()
 
@@ -152,8 +178,6 @@ class Game(models.Model):
 
             race.save()
 
-        winpath = r'Z:{0}\\'.format(path.replace('/', r'\\'))
-
         # Render the game options and write to a .def file.
         opts = self.options.render(winpath)
         self.options.file_contents = opts
@@ -174,11 +198,10 @@ class Game(models.Model):
             shell=True
         )
 
-        self.process_activation(path)
+        host = self._process_host(path)
+        self._process_activation(path, host)
 
-    def generate(self, path):
-        winpath = r'Z:{0}\\'.format(path.replace('/', r'\\'))
-
+    def _generate(self, path, winpath):
         current = self.current_turn
 
         # Write out the host file to the temp directory.
@@ -190,6 +213,16 @@ class Game(models.Model):
 
         with open(os.path.join(path, 'game.hst'), 'w') as f:
             f.write(hst)
+
+        # Write out the map file.
+        try:
+            self.mapfile.file.open()
+            xyfile = self.mapfile.file.read()
+        finally:
+            self.mapfile.file.close()
+
+        with open(os.path.join(path, 'game.xy'), 'w') as f:
+            f.write(xyfile)
 
         # Process the x files for every race playing.
         for raceturn in current.raceturns.all():
@@ -217,9 +250,22 @@ class Game(models.Model):
             shell=True
         )
 
-        self.process_new_turn(path)
+        host = self._process_host(path)
+        self._process_generation(path, host)
 
-    def process_activation(self, path):
+    def _process_host(self, path):
+        # Fetch the host file and parse it.
+        hst_files = glob.glob('{0}/*.hst'.format(path))
+        if len(hst_files) != 1:
+            raise Exception(
+                "Expected one hst file, found {0}.".format(len(hst_files)))
+
+        with open(hst_files[0]) as f:
+            hst = StarsFile.from_data(f.read())
+
+        return hst
+
+    def _process_activation(self, path, host):
         # Process and attach the game.xy map file.
         xy_files = glob.glob('{0}/*.xy'.format(path))
         if len(xy_files) != 1:
@@ -230,20 +276,11 @@ class Game(models.Model):
             self.mapfile = StarsFile.from_data(f.read())
         self.save()
 
-        # Process the host file.
-        hst_files = glob.glob('{0}/*.hst'.format(path))
-        if len(hst_files) != 1:
-            raise Exception(
-                "Expected one hst file, found {0}.".format(len(hst_files)))
-
-        with open(hst_files[0]) as f:
-            hst = StarsFile.from_data(f.read())
-
         # Check the resultant races for any that need to be created or changed.
         races = dict((r.player_number, r)
                      for r in self.races.filter(player_number__isnull=False))
 
-        for r in hst._sfile.structs:
+        for r in host._sfile.structs:
             if r.type != 6: # Type 6 is the Race data structure.
                 continue
 
@@ -266,23 +303,12 @@ class Game(models.Model):
                 Race.objects.filter(pk=race_obj.pk).update(
                     name=name, plural_name=plural_name)
 
-        self.process_new_turn(path, hst)
+        self._process_generation(path, host)
 
-    def process_new_turn(self, path, hst=None):
-        # Get and process the host file if we didn't already from
-        # process_activation.
-        if hst is None:
-            hst_files = glob.glob('{0}/*.hst'.format(path))
-            if len(hst_files) != 1:
-                raise Exception(
-                    "Expected one hst file, found {0}.".format(len(hst_files)))
-
-            with open(hst_files[0]) as f:
-                hst = StarsFile.from_data(f.read())
-
+    def _process_generation(self, path, host):
         # Create the new turn with host file attached.
-        turn = self.turns.create(year=2400 + hst._sfile.structs[0].turn,
-                                 hstfile=hst)
+        turn = self.turns.create(year=2400 + host._sfile.structs[0].turn,
+                                 hstfile=host)
 
         # Process the m files.
         races = dict((r.player_number, r)

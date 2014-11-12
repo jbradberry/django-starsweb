@@ -69,6 +69,10 @@ class GameTestCase(TestCase):
         self.user = User.objects.create_user(username='admin',
                                              password='password')
 
+    def tearDown(self):
+        for starsfile in models.StarsFile.objects.all():
+            starsfile.file.delete()
+
     def test_create_new_game(self):
         self.assertFalse(models.Game.objects.exists())
 
@@ -107,6 +111,67 @@ class GameTestCase(TestCase):
         self.assertEqual(g.state, 'S')
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html, "")
+
+    def test_generate(self):
+        g = models.Game(
+            name="Foobar",
+            slug="foobar",
+            host=self.user,
+            state='S',
+            description="This *game* is foobared.",
+        )
+        g.save()
+        opts = models.GameOptions.objects.create(game=g)
+
+        r1 = g.races.create(name="Gestalti", plural_name="Gestalti",
+                            slug="gestalti")
+        r2 = g.races.create(name="SSG", plural_name="SSG", slug="ssg")
+
+        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+            r1.racefile = models.StarsFile.from_file(File(f))
+            r1.save()
+
+        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+            r2.racefile = models.StarsFile.from_file(File(f))
+            r2.save()
+
+        # Activate the game.
+        try:
+            g.generate()
+        except Exception as e:
+            self.fail(e)
+
+        g = models.Game.objects.get(pk=g.pk)
+
+        self.assertEqual(g.state, 'A')
+        self.assertNotEqual(g.options.file_contents, '')
+        self.assertEqual(g.races.filter(player_number__isnull=False).count(), 2)
+        self.assertIsNotNone(g.mapfile)
+        self.assertEqual(g.turns.count(), 1)
+        turn = g.turns.get()
+        self.assertEqual(turn.year, 2400)
+        self.assertEqual(turn.scores.count(), 0)
+        self.assertIsNotNone(turn.hstfile)
+        self.assertEqual(turn.raceturns.filter(mfile__isnull=False).count(), 2)
+
+        # Generate a turn for already active game.
+        try:
+            g.generate()
+        except Exception as e:
+            self.fail(e)
+
+        g = models.Game.objects.get(pk=g.pk)
+
+        self.assertEqual(g.state, 'A')
+        self.assertNotEqual(g.options.file_contents, '')
+        self.assertEqual(g.races.filter(player_number__isnull=False).count(), 2)
+        self.assertIsNotNone(g.mapfile)
+        self.assertEqual(g.turns.count(), 2)
+        self.assertTrue(g.turns.filter(year=2401).exists())
+        turn = g.turns.filter(year=2401).get()
+        self.assertEqual(turn.scores.count(), 2 * 9)
+        self.assertIsNotNone(turn.hstfile)
+        self.assertEqual(turn.raceturns.filter(mfile__isnull=False).count(), 2)
 
 
 class GameOptionsTestCase(TestCase):
