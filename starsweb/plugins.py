@@ -6,7 +6,9 @@ class TurnGeneration(object):
         qs = models.Race.objects.filter(game=realm, ambassadors__user=user)
         name = session.get('name')
         if name:
-            qs = qs.filter(name=name)
+            name_qs = qs.filter(name=name)
+            if name_qs:
+                return name_qs[0]
         if qs:
             return qs[0]
 
