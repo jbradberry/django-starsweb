@@ -2,13 +2,34 @@ from . import models
 
 
 class TurnGeneration(object):
-    def get_owner(self, realm, user, session):
-        qs = models.Race.objects.filter(game=realm, ambassadors__user=user)
-        name = session.get('name')
-        if name:
-            name_qs = qs.filter(name=name)
-            if name_qs:
-                return name_qs[0]
+    slug_field = 'slug'
+
+    slug_kwarg = 'owner_slug'
+    pk_kwarg = 'owner_pk'
+
+    def _has_permission(self, user, owner):
+        return owner.ambassadors.filter(active=True, user=user).exists()
+
+    def has_pause_permission(self, user, owner):
+        return self._has_permission(user, owner)
+
+    def has_unpause_permission(self, user, owner):
+        return self._has_permission(user, owner)
+
+    def has_ready_permission(self, user, owner):
+        return self._has_permission(user, owner)
+
+    def has_unready_permission(self, user, owner):
+        return self._has_permission(user, owner)
+
+    def get_owner(self, realm, kw):
+        filters = {}
+        if self.slug_kwarg in kw:
+            filters[self.slug_field] = kw[self.slug_kwarg]
+        if self.pk_kwarg in kw:
+            filters['pk'] = kw[self.pk_kwarg]
+
+        qs = realm.races.filter(**filters)
         if qs:
             return qs[0]
 
