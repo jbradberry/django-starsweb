@@ -2,36 +2,54 @@ from . import models
 
 
 class TurnGeneration(object):
-    slug_field = 'slug'
+    realm_types = {
+        'starsgame': 'starsweb.game',
+    }
 
-    slug_kwarg = 'owner_slug'
-    pk_kwarg = 'owner_pk'
+    agent_types = {
+        'starsrace': 'starsweb.race',
+    }
 
-    def _has_permission(self, user, owner):
-        return owner.ambassadors.filter(active=True, user=user).exists()
+    permissions = {
+        'turngeneration.add_generator': '_is_host',
+        'turngeneration.change_generator': '_is_host',
+        'turngeneration.delete_generator': '_is_host',
+        'turngeneration.add_generationrule': '_is_host',
+        'turngeneration.change_generationrule': '_is_host',
+        'turngeneration.delete_generationrule': '_is_host',
+        'turngeneration.add_pause': '_is_active_ambassador',
+        'turngeneration.change_pause': '_is_active_ambassador',
+        'turngeneration.delete_pause': '_is_active_ambassador',
+        'turngeneration.add_ready': '_is_active_ambassador',
+        'turngeneration.change_ready': '_is_active_ambassador',
+        'turngeneration.delete_ready': '_is_active_ambassador',
+    }
 
-    def has_pause_permission(self, user, owner):
-        return self._has_permission(user, owner)
+    def related_agents(self, realm, agent_type):
+        if (agent_type.app_label, agent_type.model) == ('starsweb', 'race'):
+            return realm.races.all()
 
-    def has_unpause_permission(self, user, owner):
-        return self._has_permission(user, owner)
+    def has_perm(self, user, perm, obj):
+        methodname = self.permissions.get(perm)
+        if methodname is None:
+            return False
+        return getattr(self, methodname, None)(user, obj)
 
-    def has_ready_permission(self, user, owner):
-        return self._has_permission(user, owner)
+    def _is_host(self, user, obj):
+        return obj.host == user
 
-    def has_unready_permission(self, user, owner):
-        return self._has_permission(user, owner)
+    def _is_active_ambassador(self, user, obj):
+        return obj.ambassadors.filter(active=True, user=user).exists()
 
-    def get_owner(self, realm, kw):
-        filters = {}
-        if self.slug_kwarg in kw:
-            filters[self.slug_field] = kw[self.slug_kwarg]
-        if self.pk_kwarg in kw:
-            filters['pk'] = kw[self.pk_kwarg]
-
-        qs = realm.races.filter(**filters)
-        if qs:
-            return qs[0]
+    def is_ready(self, generator):
+        readys = set(r.agent.pk for r in generator.readies.all())
+        return all(
+            race.pk in readys
+            for race in models.Race.objects.filter(game_id=generator.object_id,
+                                                   player_number__isnull=False,
+                                                   ambassadors__active=True,
+                                                   is_ai=False)
+        )
 
     def auto_generate(self, realm):
         realm.generate()
