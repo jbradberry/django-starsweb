@@ -191,19 +191,16 @@ class Game(models.Model):
         logger.info("Generating start files for '{game.name}'"
                     " (pk={game.pk}).".format(game=self))
 
-        display = getattr(settings, 'DISPLAY', None)
-        display = '' if display is None else "DISPLAY={0} ".format(display)
-
         commandline = shlex.split(
-            r'{display}wine C:\\stars\\stars\!.exe'
-            r' -a {winpath}game.def'.format(winpath=winpath, display=display)
+            r'wine C:\\stars\\stars!.exe'
+            r' -a {winpath}game.def'.format(winpath=winpath)
         )
 
-        def target(cmd):
+        def activate_target(cmd):
             self._stars_process = subprocess.Popen(cmd)
             self._stars_process.communicate()
 
-        thread = threading.Thread(target=target,
+        thread = threading.Thread(target=activate_target,
                                   args=(commandline,))
         thread.start()
 
@@ -255,20 +252,17 @@ class Game(models.Model):
                 with open(target, 'w') as f:
                     f.write(raceturn.xfile_official._data)
 
-        display = getattr(settings, 'DISPLAY', None)
-        display = '' if display is None else "DISPLAY={0} ".format(display)
-
         # Call out to Stars to generate the new turn files.
         commandline = shlex.split(
-            r'{display}wine C:\\stars\\stars\!.exe'
-            r' -g {winpath}game.hst'.format(winpath=winpath, display=display)
+            r'wine C:\\stars\\stars\!.exe'
+            r' -g {winpath}game.hst'.format(winpath=winpath)
         )
 
-        def target(cmd):
+        def generate_target(cmd):
             self._stars_process = subprocess.Popen(cmd)
             self._stars_process.communicate()
 
-        thread = threading.Thread(target=target,
+        thread = threading.Thread(target=generate_target,
                                   args=(commandline,))
         thread.start()
 

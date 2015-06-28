@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.models import ContentType
+
 from . import models
 
 
@@ -25,31 +27,21 @@ class TurnGeneration(object):
         'turngeneration.delete_ready': '_is_active_ambassador',
     }
 
-    def related_agents(self, realm, agent_type):
-        if (agent_type.app_label, agent_type.model) == ('starsweb', 'race'):
-            return realm.races.all()
-
-    def has_perm(self, user, perm, obj):
-        methodname = self.permissions.get(perm)
-        if methodname is None:
-            return False
-        return getattr(self, methodname, None)(user, obj)
+    def related_agents(self, realm, agent_type=None):
+        ct = ContentType.objects.get_for_model(models.Race)
+        if agent_type is None:
+            agent_type = ct
+        if agent_type != ct:
+            return
+        return realm.races.filter(player_number__isnull=False,
+                                  ambassadors__active=True,
+                                  is_ai=False)
 
     def _is_host(self, user, obj):
         return obj.host == user
 
     def _is_active_ambassador(self, user, obj):
         return obj.ambassadors.filter(active=True, user=user).exists()
-
-    def is_ready(self, generator):
-        readys = set(r.agent.pk for r in generator.readies.all())
-        return all(
-            race.pk in readys
-            for race in models.Race.objects.filter(game_id=generator.object_id,
-                                                   player_number__isnull=False,
-                                                   ambassadors__active=True,
-                                                   is_ai=False)
-        )
 
     def auto_generate(self, realm):
         realm.generate()

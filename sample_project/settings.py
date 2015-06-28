@@ -55,6 +55,11 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
+AUTHENTICATION_BACKENDS = (
+    'turngeneration.backends.TurnGenerationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
 ROOT_URLCONF = 'sample_project.urls'
 
 WSGI_APPLICATION = 'sample_project.wsgi.application'
