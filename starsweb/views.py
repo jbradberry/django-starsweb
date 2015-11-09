@@ -27,7 +27,7 @@ if VERSION[:2] == (1, 4):
 
 
 class GameListView(ListView):
-    queryset = models.Game.objects.select_related('turn').annotate(
+    queryset = models.Game.objects.prefetch_related('turns').annotate(
         generated=Max('turns__generated')).order_by('-generated', '-created')
 
     state = None
