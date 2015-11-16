@@ -593,7 +593,7 @@ class UserDashboard(TemplateView):
 class UserRaceCreate(CreateView):
     model = models.UserRace
     form_class = forms.UserRaceForm
-    success_url = reverse_lazy('game_list')
+    success_url = reverse_lazy('user_dashboard')
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):

@@ -3,6 +3,14 @@
 
 {% block title %}User Dashboard | {{ block.super }}{% endblock %}
 
+{% block nav %}
+<ul class="nav navbar-nav">
+  {% if perms.starsweb.add_game %}
+  <li><a href="{% url 'userrace_create' %}">Create Race</a></li>
+  {% endif %}
+</ul>
+{% endblock %}
+
 {% block header %}<h1>User Dashboard</h1>{% endblock %}
 
 {% block content %}
