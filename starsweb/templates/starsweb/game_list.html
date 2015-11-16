@@ -2,6 +2,14 @@
 
 {% block title %}Games | {{ block.super }}{% endblock %}
 
+{% block nav %}
+<ul class="nav navbar-nav">
+  {% if perms.starsweb.add_game %}
+  <li><a href="{% url 'create_game' %}">Create Game</a></li>
+  {% endif %}
+</ul>
+{% endblock %}
+
 {% block header %}<h1>Games</h1>{% endblock %}
 
 {% block content %}
