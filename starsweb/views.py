@@ -540,8 +540,10 @@ class ScoreGraphView(DetailView):
         races = list(self.object.races.values_list(
             'plural_name', flat=True).order_by('id'))
 
-        year_min = min(x['turn__year'] for x in scores)
-        year_max = max(x['turn__year'] for x in scores)
+        year_min, year_max = 2400, 2400
+        if scores:
+            year_min = min(x['turn__year'] for x in scores)
+            year_max = max(x['turn__year'] for x in scores)
 
         score_data = {}
         for item in scores:
