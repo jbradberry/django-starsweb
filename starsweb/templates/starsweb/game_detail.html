@@ -5,6 +5,9 @@
 {% block nav %}
 <ul class="nav navbar-nav">
   <li><a href="{% url 'score_graph' slug=game.slug %}">Score Graphs</a></li>
+  {% if game.state == 'S' %}
+  <li><a href="{% url 'game_join' game_slug=game.slug %}">Join Game</a></li>
+  {% endif %}
 </ul>
 {% endblock %}
 
