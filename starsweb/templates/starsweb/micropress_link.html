@@ -1,3 +1,5 @@
 {% load press_tags %}
 {% get_press game as press %}
+  {% if press %}
   <h3>Read <a href="{{ press_url }}">{{ press }}</a>!</h3>
+  {% endif %}
