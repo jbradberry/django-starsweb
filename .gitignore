@@ -1,0 +1,7 @@
+*~
+*.pyc
+.tox
+*.egg-info
+starslib
+MANIFEST
+TODO
