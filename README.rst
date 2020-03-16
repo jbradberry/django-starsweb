@@ -12,7 +12,7 @@ A hosting app for the classic 4X space strategy game Stars_.
 
 Requirements
 ------------
-- Python >= 2.6
+- Python >= 2.7
 - Django >= 1.5, < 1.9
 - django-sendfile_
 - django-template-utils_
