@@ -2,6 +2,9 @@
 django-starsweb
 ===============
 
+.. image:: https://travis-ci.com/jbradberry/django-starsweb.svg?branch=master
+    :target: https://travis-ci.com/jbradberry/django-starsweb
+
 A hosting app for the classic 4X space strategy game Stars_.
 
 .. _Stars: http://en.wikipedia.org/wiki/Stars!
