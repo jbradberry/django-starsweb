@@ -1,7 +1,6 @@
-from django.template.defaultfilters import slugify
-from django.db.models import BLANK_CHOICE_DASH
-from django.conf import settings
 from django import forms
+from django.db.models import BLANK_CHOICE_DASH
+from django.template.defaultfilters import slugify
 
 from starslib import base
 

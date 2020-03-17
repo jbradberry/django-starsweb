@@ -46,7 +46,7 @@ class StarsFileTestCase(TestCase):
         with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
             starsfile = models.StarsFile.from_data(f.read())
 
-        starsfile2 = models.StarsFile.from_file(starsfile.file)
+        models.StarsFile.from_file(starsfile.file)
 
         self.assertEqual(models.StarsFile.objects.count(), 2)
         sfile1, sfile2 = models.StarsFile.objects.all()
@@ -121,7 +121,7 @@ class GameTestCase(TestCase):
             description="This *game* is foobared.",
         )
         g.save()
-        opts = models.GameOptions.objects.create(game=g)
+        models.GameOptions.objects.create(game=g)
 
         r1 = g.races.create(name="Gestalti", plural_name="Gestalti",
                             slug="gestalti")
@@ -199,7 +199,7 @@ class GameOptionsTestCase(TestCase):
         self.assertEqual(output_lines[0], "Foobar")
         self.assertEqual(output_lines[1], "1 1 1")
         self.assertEqual(output_lines[2], "0 0 0 0 0 1 0")
-        self.assertEqual(output_lines[3], "1") # number of races
+        self.assertEqual(output_lines[3], "1")  # number of races
         self.assertEqual(output_lines[4], r"C:\\stars\\game\\race.r1")
         self.assertIn("0\n"*7, output)
         self.assertEqual(output_lines[12], "1 50")
@@ -221,7 +221,7 @@ class GameOptionsTestCase(TestCase):
         self.assertEqual(output_lines[0], "Foobar")
         self.assertEqual(output_lines[1], "1 1 1")
         self.assertEqual(output_lines[2], "0 0 0 0 0 1 0")
-        self.assertEqual(output_lines[3], "2") # number of races
+        self.assertEqual(output_lines[3], "2")  # number of races
         self.assertEqual(output_lines[4], r"C:\\stars\\game\\race.r1")
         self.assertEqual(output_lines[5], "# 0 4")
         self.assertIn("0\n"*7, output)

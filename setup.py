@@ -26,7 +26,7 @@ for dirpath, dirnames, filenames in os.walk('starsweb'):
             pkg = pkg.replace(os.path.altsep, '.')
         packages.append(pkg)
     elif filenames:
-        prefix = dirpath[9:] # Strip "starsweb/" or "starsweb\"
+        prefix = dirpath[9:]  # Strip "starsweb/" or "starsweb\"
         for f in filenames:
             data_files.append(os.path.join(prefix, f))
 

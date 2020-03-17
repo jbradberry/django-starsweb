@@ -1,4 +1,3 @@
-from operator import attrgetter
 import subprocess
 import threading
 import logging
@@ -9,7 +8,6 @@ import tempfile
 import shutil
 import shlex
 
-from django.contrib.contenttypes.models import ContentType
 from django.template.defaultfilters import slugify
 from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
@@ -303,7 +301,7 @@ class Game(models.Model):
                      for r in self.races.filter(player_number__isnull=False))
 
         for r in host._sfile.structs:
-            if r.type != 6: # Type 6 is the Race data structure.
+            if r.type != 6:  # Type 6 is the Race data structure.
                 continue
 
             race_obj = races.get(r.player)
@@ -348,10 +346,10 @@ class Game(models.Model):
 
             # Create a new Race-Turn intermediate table entry, with
             # the m file attached.
-            raceturn = turn.raceturns.create(race=races[player], mfile=mfile)
+            turn.raceturns.create(race=races[player], mfile=mfile)
 
             for S in structs:
-                if S.type != 45: # Type 45 is the Score data structure.
+                if S.type != 45:  # Type 45 is the Score data structure.
                     continue
 
                 for sfield, section in Score.FIELDS:
