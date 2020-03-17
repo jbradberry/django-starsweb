@@ -1,23 +1,19 @@
-import subprocess
-import threading
 import logging
 import os.path
 import uuid
 import glob
 import tempfile
 import shutil
-import shlex
 
-from django.template.defaultfilters import slugify
 from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.conf import settings
 from django.db import models
+from django.template.defaultfilters import slugify
 
 from starslib import base
 
-from . import markup
+from . import markup, processing
 
 logger = logging.getLogger(__name__)
 
@@ -189,24 +185,7 @@ class Game(models.Model):
         logger.info("Generating start files for '{game.name}'"
                     " (pk={game.pk}).".format(game=self))
 
-        commandline = shlex.split(
-            r'wine C:\\stars\\stars!.exe'
-            r' -a {winpath}game.def'.format(winpath=winpath)
-        )
-
-        def activate_target(cmd):
-            self._stars_process = subprocess.Popen(cmd)
-            self._stars_process.communicate()
-
-        thread = threading.Thread(target=activate_target,
-                                  args=(commandline,))
-        thread.start()
-
-        thread.join(getattr(settings, 'STARSWEB_TIMEOUT', 5 * 60))
-        if thread.is_alive():
-            self._stars_process.terminate()
-            thread.join()
-            raise Exception("Stars! timed out.")
+        processing.activate(winpath)
 
         host = self._process_host(path)
         self._process_activation(path, host)
@@ -251,24 +230,7 @@ class Game(models.Model):
                     f.write(raceturn.xfile_official._data)
 
         # Call out to Stars to generate the new turn files.
-        commandline = shlex.split(
-            r'wine C:\\stars\\stars\!.exe'
-            r' -g {winpath}game.hst'.format(winpath=winpath)
-        )
-
-        def generate_target(cmd):
-            self._stars_process = subprocess.Popen(cmd)
-            self._stars_process.communicate()
-
-        thread = threading.Thread(target=generate_target,
-                                  args=(commandline,))
-        thread.start()
-
-        thread.join(getattr(settings, 'STARSWEB_TIMEOUT', 5 * 60))
-        if thread.is_alive():
-            self._stars_process.terminate()
-            thread.join()
-            raise Exception("Stars! timed out.")
+        processing.generate(winpath)
 
         host = self._process_host(path)
         self._process_generation(path, host)
