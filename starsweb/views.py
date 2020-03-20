@@ -1,6 +1,5 @@
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   DeleteView, TemplateView, View)
-from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
 from django.template.defaultfilters import slugify
@@ -10,8 +9,6 @@ from django.http import Http404
 from django.core.files.base import ContentFile
 from django.contrib import messages
 from django.db.models import Max
-from django.forms import ValidationError
-from django.core.files import File
 
 from sendfile import sendfile
 from starslib import base
@@ -19,11 +16,6 @@ import json
 
 from . import models
 from . import forms
-
-from django import VERSION
-
-if VERSION[:2] == (1, 4):
-    from .shim14 import TemplateView
 
 
 class GameListView(ListView):
@@ -290,8 +282,7 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
             plural_name = race_struct.plural_race_name
             altered = False
 
-            if (name != form.instance.name or
-                plural_name != form.instance.plural_name):
+            if name != form.instance.name or plural_name != form.instance.plural_name:
                 messages.info(
                     self.request,
                     "The attached race file's name or plural name has been"
@@ -708,8 +699,7 @@ class RaceFileBind(ParentGameMixin, UpdateView):
             plural_name = race_struct.plural_race_name
             altered = False
 
-            if (name != self.object.name or
-                plural_name != self.object.plural_name):
+            if name != self.object.name or plural_name != self.object.plural_name:
                 messages.info(
                     self.request,
                     "The attached race file's name or plural name has been"

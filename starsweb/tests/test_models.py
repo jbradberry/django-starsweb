@@ -1,8 +1,11 @@
-from django.contrib.auth.models import User
-from django.test import TestCase
-from django.core.files.base import File
-
 import os
+import shutil
+
+from django.contrib.auth.models import User
+from django.core.files.base import File
+from django.test import TestCase
+
+from mock import patch
 
 from .. import models
 
@@ -46,7 +49,7 @@ class StarsFileTestCase(TestCase):
         with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
             starsfile = models.StarsFile.from_data(f.read())
 
-        starsfile2 = models.StarsFile.from_file(starsfile.file)
+        models.StarsFile.from_file(starsfile.file)
 
         self.assertEqual(models.StarsFile.objects.count(), 2)
         sfile1, sfile2 = models.StarsFile.objects.all()
@@ -112,7 +115,19 @@ class GameTestCase(TestCase):
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html, "")
 
-    def test_generate(self):
+    @patch('starsweb.processing.execute')
+    def test_generate(self, mock_execute):
+        def se_activate(lst):
+            winpath = lst[-1]
+            path = os.path.dirname(winpath[2:].replace('\\', '/'))
+
+            shutil.copy(os.path.join(PATH, 'files', 'foobar.hst'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'foobar.xy'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'foobar.m1'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'foobar.m2'), path)
+
+        mock_execute.side_effect = se_activate
+
         g = models.Game(
             name="Foobar",
             slug="foobar",
@@ -121,7 +136,7 @@ class GameTestCase(TestCase):
             description="This *game* is foobared.",
         )
         g.save()
-        opts = models.GameOptions.objects.create(game=g)
+        models.GameOptions.objects.create(game=g)
 
         r1 = g.races.create(name="Gestalti", plural_name="Gestalti",
                             slug="gestalti")
@@ -153,6 +168,16 @@ class GameTestCase(TestCase):
         self.assertEqual(turn.scores.count(), 0)
         self.assertIsNotNone(turn.hstfile)
         self.assertEqual(turn.raceturns.filter(mfile__isnull=False).count(), 2)
+
+        def se_generate(lst):
+            winpath = lst[-1]
+            path = os.path.dirname(winpath[2:].replace('\\', '/'))
+
+            shutil.copy(os.path.join(PATH, 'files', 'game.hst'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'game.m1'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'game.m2'), path)
+
+        mock_execute.side_effect = se_generate
 
         # Generate a turn for already active game.
         try:
@@ -199,7 +224,7 @@ class GameOptionsTestCase(TestCase):
         self.assertEqual(output_lines[0], "Foobar")
         self.assertEqual(output_lines[1], "1 1 1")
         self.assertEqual(output_lines[2], "0 0 0 0 0 1 0")
-        self.assertEqual(output_lines[3], "1") # number of races
+        self.assertEqual(output_lines[3], "1")  # number of races
         self.assertEqual(output_lines[4], r"C:\\stars\\game\\race.r1")
         self.assertIn("0\n"*7, output)
         self.assertEqual(output_lines[12], "1 50")
@@ -221,7 +246,7 @@ class GameOptionsTestCase(TestCase):
         self.assertEqual(output_lines[0], "Foobar")
         self.assertEqual(output_lines[1], "1 1 1")
         self.assertEqual(output_lines[2], "0 0 0 0 0 1 0")
-        self.assertEqual(output_lines[3], "2") # number of races
+        self.assertEqual(output_lines[3], "2")  # number of races
         self.assertEqual(output_lines[4], r"C:\\stars\\game\\race.r1")
         self.assertEqual(output_lines[5], "# 0 4")
         self.assertIn("0\n"*7, output)

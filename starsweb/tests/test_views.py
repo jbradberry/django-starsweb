@@ -207,7 +207,7 @@ class GameCreateViewTestCase(TestCase):
              'slug': "foobar",
              'description': "This *game* is foobared.",
              'markup_type': "markdown",
-             'published': True,},
+             'published': True},
             follow=True
         )
         self.assertEqual(models.Game.objects.count(), 1)
@@ -232,7 +232,7 @@ class GameCreateViewTestCase(TestCase):
              'slug': "foobar",
              'description': "",
              'markup_type': "markdown",
-             'published': True,},
+             'published': True},
             follow=True
         )
         self.assertEqual(models.Game.objects.count(), 1)
@@ -257,7 +257,7 @@ class GameCreateViewTestCase(TestCase):
              'slug': "foobar",
              'description': "This *game* is foobared.",
              'markup_type': "markdown",
-             'published': True,},
+             'published': True},
         )
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
@@ -280,7 +280,7 @@ class GameCreateViewTestCase(TestCase):
              'slug': "foobar",
              'description': "This *game* is foobared.",
              'markup_type': "markdown",
-             'published': True,},
+             'published': True},
         )
         self.assertRedirects(response,
                              "{0}?next={1}".format(settings.LOGIN_URL,
@@ -704,7 +704,7 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.get().name, "Gestalti")
 
     def test_not_authorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -901,7 +901,7 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Ambassador.objects.get().name, "KonTiki")
 
     def test_not_authorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -1173,7 +1173,7 @@ class RaceDashboardViewTestCase(TestCase):
                                                  kwargs=self.url_kwargs))
 
     def test_userrace_with_no_racefile(self):
-        userrace = self.user.starsweb_racepool.create(identifier="Gestalti v1")
+        self.user.starsweb_racepool.create(identifier="Gestalti v1")
         self.assertFalse(models.UserRace.objects.filter(racefile__isnull=False))
 
         try:
@@ -1248,7 +1248,7 @@ class RaceDashboardViewTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_not_authorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         response = self.client.get(self.dashboard_url)
@@ -1489,7 +1489,7 @@ class UserRaceUpdateTestCase(TestCase):
         self.assertEqual(userrace.identifier, "Histalti")
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.UserRace.objects.count(), 1)
@@ -1590,7 +1590,7 @@ class UserRaceDeleteTestCase(TestCase):
         self.assertEqual(models.UserRace.objects.count(), 0)
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.UserRace.objects.count(), 1)
@@ -1968,7 +1968,7 @@ class UserRaceDownloadTestCase(TestCase):
         self.assertEqual(response['Content-length'], '4')
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         response = self.client.get(self.download_url)
@@ -2025,7 +2025,7 @@ class UserRaceUploadTestCase(TestCase):
         self.assertIsNotNone(models.UserRace.objects.get().racefile)
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2163,7 +2163,7 @@ class RaceFileDownloadTestCase(TestCase):
         self.assertEqual(response['Content-length'], '4')
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.filter(type='r').count(), 1)
@@ -2258,7 +2258,7 @@ class RaceFileUploadTestCase(TestCase):
         self.assertIsNotNone(models.Race.objects.get().racefile)
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2478,7 +2478,7 @@ class StateFileDownloadTestCase(TestCase):
         self.assertEqual(response['Content-length'], '9')
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.filter(type='m').count(), 1)
@@ -2586,7 +2586,7 @@ class OrderFileDownloadTestCase(TestCase):
         self.assertEqual(response['Content-length'], '9')
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
@@ -2698,7 +2698,7 @@ class OrderFileUploadTestCase(TestCase):
         self.assertEqual(raceturn.xfile.type, 'x')
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2891,7 +2891,7 @@ class HistoryFileDownloadTestCase(TestCase):
         self.assertEqual(response['Content-length'], '9')
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.filter(type='h').count(), 1)
@@ -3003,7 +3003,7 @@ class HistoryFileUploadTestCase(TestCase):
         self.assertEqual(raceturn.hfile.type, 'h')
 
     def test_unauthorized(self):
-        user = User.objects.create_user(username='jrb', password='password')
+        User.objects.create_user(username='jrb', password='password')
         self.client.login(username='jrb', password='password')
 
         self.assertEqual(models.StarsFile.objects.count(), 1)

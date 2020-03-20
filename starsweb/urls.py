@@ -6,9 +6,9 @@ from django.conf import settings
 from . import views
 
 
-urlpatterns = patterns('',
-    url(r'^$', RedirectView.as_view(url=reverse_lazy('game_list'),
-                                    permanent=False)),
+urlpatterns = patterns(
+    '',
+    url(r'^$', RedirectView.as_view(url=reverse_lazy('game_list'), permanent=False)),
     url(r'^user/$', views.UserDashboard.as_view(),
         name='user_dashboard'),
     url(r'^user/download/(?P<pk>\d+)/$', views.UserRaceDownload.as_view(),
@@ -69,7 +69,8 @@ urlpatterns = patterns('',
 
 if 'micropress' in settings.INSTALLED_APPS:
     # optional django-micro-press
-    urlpatterns += patterns('',
+    urlpatterns += patterns(
+        '',
         (r'^game/(?P<realm_slug>[-\w]+)/news/',
          include('micropress.urls', namespace="starsweb",
                  app_name="micropress"),

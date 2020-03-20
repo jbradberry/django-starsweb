@@ -22,7 +22,7 @@ class TurnGenerationTestCase(TestCase):
     def test_active_ambassador(self):
         r1 = self.game.races.create(name="Gestalti", plural_name="Gestalti",
                                     slug="gestalti")
-        a1 = r1.ambassadors.create(name="KonTiki", user=self.user, active=True)
+        r1.ambassadors.create(name="KonTiki", user=self.user, active=True)
 
         perms = (
             'turngeneration.add_pause',
@@ -39,7 +39,7 @@ class TurnGenerationTestCase(TestCase):
     def test_inactive_ambassador(self):
         r1 = self.game.races.create(name="Gestalti", plural_name="Gestalti",
                                     slug="gestalti")
-        a1 = r1.ambassadors.create(name="Jeff", user=self.user, active=False)
+        r1.ambassadors.create(name="Jeff", user=self.user, active=False)
 
         perms = (
             'turngeneration.add_pause',
