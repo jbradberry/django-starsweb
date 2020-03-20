@@ -1,8 +1,11 @@
-from django.contrib.auth.models import User
-from django.test import TestCase
-from django.core.files.base import File
-
 import os
+import shutil
+
+from django.contrib.auth.models import User
+from django.core.files.base import File
+from django.test import TestCase
+
+from mock import patch
 
 from .. import models
 
@@ -112,7 +115,19 @@ class GameTestCase(TestCase):
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html, "")
 
-    def test_generate(self):
+    @patch('starsweb.processing.execute')
+    def test_generate(self, mock_execute):
+        def se_activate(lst):
+            winpath = lst[-1]
+            path = os.path.dirname(winpath[2:].replace('\\', '/'))
+
+            shutil.copy(os.path.join(PATH, 'files', 'foobar.hst'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'foobar.xy'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'foobar.m1'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'foobar.m2'), path)
+
+        mock_execute.side_effect = se_activate
+
         g = models.Game(
             name="Foobar",
             slug="foobar",
@@ -153,6 +168,16 @@ class GameTestCase(TestCase):
         self.assertEqual(turn.scores.count(), 0)
         self.assertIsNotNone(turn.hstfile)
         self.assertEqual(turn.raceturns.filter(mfile__isnull=False).count(), 2)
+
+        def se_generate(lst):
+            winpath = lst[-1]
+            path = os.path.dirname(winpath[2:].replace('\\', '/'))
+
+            shutil.copy(os.path.join(PATH, 'files', 'game.hst'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'game.m1'), path)
+            shutil.copy(os.path.join(PATH, 'files', 'game.m2'), path)
+
+        mock_execute.side_effect = se_generate
 
         # Generate a turn for already active game.
         try:
