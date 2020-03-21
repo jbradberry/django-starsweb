@@ -11,6 +11,7 @@ from django.core.urlresolvers import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.template.defaultfilters import slugify
+from django.utils.encoding import python_2_unicode_compatible
 
 from starslib import base
 
@@ -57,12 +58,12 @@ class StarsFile(models.Model):
         return starsfile
 
     @classmethod
-    def from_file(cls, file, type=None, **kwargs):
-        try:
-            file.open()
-            data = file.read()
+    def from_file(cls, _file, type=None, **kwargs):
+        try:  # FIXME
+            _file.open('rb')
+            data = _file.read()
         finally:
-            file.close()
+            _file.close()
 
         return cls.from_data(data, type, **kwargs)
 
@@ -78,6 +79,7 @@ class StarsFile(models.Model):
         return sfile
 
 
+@python_2_unicode_compatible
 class Game(models.Model):
     STATE_CHOICES = (
         ('S', 'Setup'),
@@ -100,7 +102,7 @@ class Game(models.Model):
 
     mapfile = models.ForeignKey(StarsFile, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
@@ -172,7 +174,7 @@ class Game(models.Model):
 
             # Write out the race file to the temp directory.
             filename = 'race.r{0}'.format(race.player_number + 1)
-            with open(os.path.join(path, filename), 'w') as f:
+            with open(os.path.join(path, filename), 'wb') as f:
                 f.write(new_starsfile._data)
 
             race.save()
@@ -197,23 +199,23 @@ class Game(models.Model):
         current = self.current_turn
 
         # Write out the host file to the temp directory.
-        try:
-            current.hstfile.file.open()
+        try:  # FIXME
+            current.hstfile.file.open('rb')
             hst = current.hstfile.file.read()
         finally:
             current.hstfile.file.close()
 
-        with open(os.path.join(path, 'game.hst'), 'w') as f:
+        with open(os.path.join(path, 'game.hst'), 'wb') as f:
             f.write(hst)
 
         # Write out the map file.
-        try:
-            self.mapfile.file.open()
+        try:  # FIXME
+            self.mapfile.file.open('rb')
             xyfile = self.mapfile.file.read()
         finally:
             self.mapfile.file.close()
 
-        with open(os.path.join(path, 'game.xy'), 'w') as f:
+        with open(os.path.join(path, 'game.xy'), 'wb') as f:
             f.write(xyfile)
 
         # Process the x files for every race playing.
@@ -229,7 +231,7 @@ class Game(models.Model):
                 # Write out the x file to the temp directory.
                 target = os.path.join(
                     path, 'game.x{0}'.format(raceturn.race.player_number + 1))
-                with open(target, 'w') as f:
+                with open(target, 'wb') as f:
                     f.write(raceturn.xfile_official._data)
 
         # Call out to Stars to generate the new turn files.
@@ -245,7 +247,7 @@ class Game(models.Model):
             raise Exception(
                 "Expected one hst file, found {0}.".format(len(hst_files)))
 
-        with open(hst_files[0]) as f:
+        with open(hst_files[0], 'rb') as f:
             hst = StarsFile.from_data(f.read())
 
         return hst
@@ -257,7 +259,7 @@ class Game(models.Model):
             raise Exception(
                 "Expected one xy file, found {0}.".format(len(xy_files)))
 
-        with open(xy_files[0]) as f:
+        with open(xy_files[0], 'rb') as f:
             self.mapfile = StarsFile.from_data(f.read())
         self.save()
 
@@ -303,7 +305,7 @@ class Game(models.Model):
                                for sfield, section in Score.FIELDS)
 
         for m_name in glob.glob('{0}/*.m[0-9]*'.format(path)):
-            with open(m_name) as f:
+            with open(m_name, 'rb') as f:
                 mfile = StarsFile.from_data(f.read())
 
             structs = mfile._sfile.structs
@@ -530,6 +532,7 @@ class GameOptions(models.Model):
         return contents
 
 
+@python_2_unicode_compatible
 class Race(models.Model):
     game = models.ForeignKey(Game, related_name='races')
     name = models.CharField(max_length=15)
@@ -549,7 +552,7 @@ class Race(models.Model):
                            ('game', 'plural_name'),
                            ('game', 'player_number'))
 
-    def __unicode__(self):
+    def __str__(self):
         return self.plural_name
 
     def get_absolute_url(self):
@@ -567,6 +570,7 @@ class Race(models.Model):
             return self.player_number + 1
 
 
+@python_2_unicode_compatible
 class RacePage(models.Model):
     race = models.ForeignKey(Race, related_name='racepages')
     slug = models.SlugField(max_length=32)
@@ -576,7 +580,7 @@ class RacePage(models.Model):
     markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
                                    default=markup.DEFAULT_MARKUP)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def save(self, *args, **kwargs):
@@ -604,6 +608,7 @@ class RacePage(models.Model):
                                'slug': self.slug})
 
 
+@python_2_unicode_compatible
 class UserRace(models.Model):
     user = models.ForeignKey('auth.User', related_name='starsweb_racepool')
     identifier = models.CharField(max_length=64)
@@ -612,10 +617,11 @@ class UserRace(models.Model):
     class Meta:
         unique_together = ('user', 'identifier')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.identifier
 
 
+@python_2_unicode_compatible
 class Ambassador(models.Model):
     race = models.ForeignKey(Race, related_name='ambassadors')
     user = models.ForeignKey("auth.User", related_name='starsweb_ambassadors')
@@ -625,10 +631,11 @@ class Ambassador(models.Model):
     class Meta:
         unique_together = ('race', 'user')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class Turn(models.Model):
     game = models.ForeignKey(Game, related_name='turns')
     year = models.IntegerField()
@@ -639,7 +646,7 @@ class Turn(models.Model):
         get_latest_by = 'generated'
         ordering = ('-generated',)
 
-    def __unicode__(self):
+    def __str__(self):
         return six.text_type(self.year)
 
 
@@ -654,6 +661,7 @@ class RaceTurn(models.Model):
     uploads = models.IntegerField(default=0)
 
 
+@python_2_unicode_compatible
 class Score(models.Model):
     RANK = 0
     SCORE = 1
@@ -709,15 +717,16 @@ class Score(models.Model):
         ordering = ('-turn', 'race')
         unique_together = ('turn', 'race', 'section')
 
-    def __unicode__(self):
+    def __str__(self):
         return u"{0}: {1}".format(self.get_section_display(), self.value)
 
 
+@python_2_unicode_compatible
 class Star(models.Model):
     game = models.ForeignKey(Game)
     name = models.CharField(max_length=18)
     x = models.IntegerField()
     y = models.IntegerField()
 
-    def __unicode__(self):
+    def __str__(self):
         return u"{s.name} ({s.x}, {s.y})".format(s=self)

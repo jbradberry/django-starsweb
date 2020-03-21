@@ -21,7 +21,7 @@ class StarsFileTestCase(TestCase):
     def test_from_data(self):
         self.assertEqual(models.StarsFile.objects.count(), 0)
 
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             starsfile = models.StarsFile.from_data(f.read())
 
         self.assertEqual(starsfile.type, 'xy')
@@ -33,7 +33,7 @@ class StarsFileTestCase(TestCase):
     def test_from_file(self):
         self.assertEqual(models.StarsFile.objects.count(), 0)
 
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             xy_file = File(f)
 
             starsfile = models.StarsFile.from_file(xy_file)
@@ -47,7 +47,7 @@ class StarsFileTestCase(TestCase):
     def test_copy_from_starsfile_file(self):
         self.assertEqual(models.StarsFile.objects.count(), 0)
 
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             starsfile = models.StarsFile.from_data(f.read())
 
         models.StarsFile.from_file(starsfile.file)
@@ -58,7 +58,7 @@ class StarsFileTestCase(TestCase):
         self.assertNotEqual(sfile1.file.path, sfile2.file.path)
 
     def test_parse(self):
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             data = f.read()
 
         sfile = models.StarsFile.parse(data)
@@ -143,11 +143,11 @@ class GameTestCase(TestCase):
                             slug="gestalti")
         r2 = g.races.create(name="SSG", plural_name="SSG", slug="ssg")
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             r1.racefile = models.StarsFile.from_file(File(f))
             r1.save()
 
-        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'ssg.r1'), 'rb') as f:
             r2.racefile = models.StarsFile.from_file(File(f))
             r2.save()
 

@@ -272,8 +272,8 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
 
         if racefile:
             sf = base.StarsFile()
-            try:
-                racefile.file.open()
+            try:  # FIXME
+                racefile.file.open('rb')
                 data = racefile.file.read()
                 sf.bytes = data
             finally:
@@ -689,8 +689,8 @@ class RaceFileBind(ParentGameMixin, UpdateView):
 
         if racefile:
             sf = base.StarsFile()
-            try:
-                racefile.file.open()
+            try:  # FIXME
+                racefile.file.open('rb')
                 data = racefile.file.read()
                 sf.bytes = data
             finally:

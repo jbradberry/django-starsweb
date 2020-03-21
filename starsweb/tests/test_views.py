@@ -306,7 +306,7 @@ class GameMapDownloadTestCase(TestCase):
 
         starsfile = models.StarsFile(upload_user=self.user, type='xy')
         starsfile.save()
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             starsfile.file.save('ulf_war.xy', File(f))
 
         self.game.mapfile = starsfile
@@ -565,7 +565,7 @@ class RaceUpdateViewTestCase(TestCase):
 
         starsfile = models.StarsFile(upload_user=self.user, type='r')
         starsfile.save()
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             starsfile.file.save('foo.r1', File(f))
 
         self.race.racefile = starsfile
@@ -590,9 +590,9 @@ class RaceUpdateViewTestCase(TestCase):
 
         starsfile = models.StarsFile.objects.get()
         new_path = starsfile.file.path
-        with open(new_path) as f:
+        with open(new_path, 'rb') as f:
             new_file = f.read()
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             old_file = f.read()
 
         self.assertNotEqual(new_file, old_file,
@@ -1205,7 +1205,7 @@ class RaceDashboardViewTestCase(TestCase):
         userrace = self.user.starsweb_racepool.create(identifier="Gestalti v1")
         starsfile = models.StarsFile(upload_user=self.user, type='r')
         starsfile.save()
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             starsfile.file.save('foo.r1', File(f))
         userrace.racefile = starsfile
         userrace.save()
@@ -1281,13 +1281,13 @@ class UserDashboardTestCase(TestCase):
         self.starsfile1 = models.StarsFile(upload_user=self.user,
                                            type='r')
         self.starsfile1.save()
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             self.starsfile1.file.save('foo.r1', File(f))
 
         self.starsfile2 = models.StarsFile(upload_user=self.user,
                                            type='r')
         self.starsfile2.save()
-        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'ssg.r1'), 'rb') as f:
             self.starsfile2.file.save('foo.r1', File(f))
 
         self.userrace1 = models.UserRace(user=self.user,
@@ -1661,7 +1661,7 @@ class RaceFileBindTestCase(TestCase):
         self.starsfile = models.StarsFile(upload_user=self.user,
                                           type='r')
         self.starsfile.save()
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             self.starsfile.file.save('foo.r1', File(f))
         self.userrace = models.UserRace(user=self.user,
                                         identifier="Gestalti v1",
@@ -1695,9 +1695,9 @@ class RaceFileBindTestCase(TestCase):
         self.assertNotEqual(race.racefile.pk, starsfile.pk)
         self.assertNotEqual(race.racefile.file.path, starsfile.file.path)
 
-        with open(race.racefile.file.path) as f:
+        with open(race.racefile.file.path, 'rb') as f:
             data_new = f.read()
-        with open(starsfile.file.path) as f:
+        with open(starsfile.file.path, 'rb') as f:
             data_old = f.read()
         self.assertEqual(data_new, data_old,
                          msg="File contents unexpectedly not equal.")
@@ -1745,7 +1745,7 @@ class RaceFileBindTestCase(TestCase):
         starsfile = models.StarsFile(upload_user=self.user,
                                      type='r')
         starsfile.save()
-        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'ssg.r1'), 'rb') as f:
             starsfile.file.save('foo.r2', File(f))
         userrace = models.UserRace(user=self.user,
                                    identifier="SSG",
@@ -1767,9 +1767,9 @@ class RaceFileBindTestCase(TestCase):
         self.assertNotEqual(race.racefile.pk, starsfile.pk)
         self.assertNotEqual(race.racefile.file.path, starsfile.file.path)
 
-        with open(race.racefile.file.path) as f:
+        with open(race.racefile.file.path, 'rb') as f:
             data_new = f.read()
-        with open(starsfile.file.path) as f:
+        with open(starsfile.file.path, 'rb') as f:
             data_old = f.read()
         self.assertNotEqual(data_new, data_old,
                             msg="File contents unexpectedly equal.")
@@ -1949,7 +1949,7 @@ class UserRaceDownloadTestCase(TestCase):
 
         self.starsfile = models.StarsFile(upload_user=self.user,
                                           type='r',
-                                          file=SimpleUploadedFile("file.r1", "test"))
+                                          file=SimpleUploadedFile("file.r1", b"test"))
         self.starsfile.save()
         self.userrace = models.UserRace(user=self.user,
                                         identifier="Gestalti v1",
@@ -2015,7 +2015,7 @@ class UserRaceUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 200)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f},
                                         follow=True)
         self.assertEqual(response.status_code, 200)
@@ -2036,7 +2036,7 @@ class UserRaceUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2054,7 +2054,7 @@ class UserRaceUploadTestCase(TestCase):
                              "{0}?next={1}".format(settings.LOGIN_URL,
                                                    self.upload_url))
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
@@ -2068,7 +2068,7 @@ class UserRaceUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 0)
         self.assertIsNone(models.UserRace.objects.get().racefile)
 
-        with open(os.path.join(PATH, '__init__.py')) as f:
+        with open(os.path.join(PATH, 'test_models.py'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Not a valid Stars race file.")
@@ -2079,7 +2079,7 @@ class UserRaceUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 0)
         self.assertIsNone(models.UserRace.objects.get().racefile)
 
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Not a valid Stars race file.")
@@ -2094,7 +2094,7 @@ class UserRaceUploadTestCase(TestCase):
         response = self.client.get(upload_url)
         self.assertEqual(response.status_code, 404)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(upload_url, {'file': f})
         self.assertEqual(response.status_code, 404)
 
@@ -2108,7 +2108,7 @@ class UserRaceUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 200)
 
-        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'ssg.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f},
                                         follow=True)
         self.assertEqual(response.status_code, 200)
@@ -2134,7 +2134,7 @@ class RaceFileDownloadTestCase(TestCase):
         self.game.save()
         self.starsfile = models.StarsFile(upload_user=self.user,
                                           type='r',
-                                          file=SimpleUploadedFile("file.r1", "test"))
+                                          file=SimpleUploadedFile("file.r1", b"test"))
         self.starsfile.save()
         self.race = models.Race(game=self.game,
                                 name='Gestalti',
@@ -2253,7 +2253,7 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 200)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2269,7 +2269,7 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2285,7 +2285,7 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2303,7 +2303,7 @@ class RaceFileUploadTestCase(TestCase):
                              "{0}?next={1}".format(settings.LOGIN_URL,
                                                    self.upload_url))
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
@@ -2322,7 +2322,7 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2338,7 +2338,7 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2354,7 +2354,7 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2364,7 +2364,7 @@ class RaceFileUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 0)
         self.assertIsNone(models.Race.objects.get().racefile)
 
-        with open(os.path.join(PATH, '__init__.py')) as f:
+        with open(os.path.join(PATH, 'test_models.py'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Not a valid Stars race file.")
@@ -2375,7 +2375,7 @@ class RaceFileUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 0)
         self.assertIsNone(models.Race.objects.get().racefile)
 
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Not a valid Stars race file.")
@@ -2386,7 +2386,7 @@ class RaceFileUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 0)
         self.assertIsNone(models.Race.objects.get().racefile)
 
-        with open(os.path.join(PATH, 'files', 'ssg.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'ssg.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f},
                                         follow=True)
         self.assertEqual(response.status_code, 200)
@@ -2406,7 +2406,7 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(upload_url)
         self.assertEqual(response.status_code, 404)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(upload_url, {'file': f})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2423,7 +2423,7 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(upload_url)
         self.assertEqual(response.status_code, 404)
 
-        with open(os.path.join(PATH, 'files', 'gestalti.r1')) as f:
+        with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(upload_url, {'file': f})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2455,7 +2455,7 @@ class StateFileDownloadTestCase(TestCase):
         self.ambassador.save()
 
         self.starsfile = models.StarsFile(
-            type='m', file=SimpleUploadedFile(".m", "turn 2400"))
+            type='m', file=SimpleUploadedFile(".m", b"turn 2400"))
         self.starsfile.save()
 
         self.turn = self.game.turns.create(year=2400)
@@ -2562,7 +2562,7 @@ class OrderFileDownloadTestCase(TestCase):
         self.ambassador.save()
 
         self.starsfile = models.StarsFile(
-            type='x', file=SimpleUploadedFile(".x", "turn 2400"))
+            type='x', file=SimpleUploadedFile(".x", b"turn 2400"))
         self.starsfile.save()
 
         self.turn = self.game.turns.create(year=2400)
@@ -2669,7 +2669,7 @@ class OrderFileUploadTestCase(TestCase):
         self.ambassador.save()
 
         self.starsfile = models.StarsFile(
-            type='m', file=SimpleUploadedFile(".m", "turn 2400"))
+            type='m', file=SimpleUploadedFile(".m", b"turn 2400"))
         self.starsfile.save()
 
         self.turn = self.game.turns.create(year=2400)
@@ -2691,7 +2691,7 @@ class OrderFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 200)
 
-        with open(os.path.join(PATH, 'files', '500years.x5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(models.StarsFile.objects.count(), 2)
@@ -2709,7 +2709,7 @@ class OrderFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', '500years.x5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2725,7 +2725,7 @@ class OrderFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', '500years.x5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2743,7 +2743,7 @@ class OrderFileUploadTestCase(TestCase):
                              "{0}?next={1}".format(settings.LOGIN_URL,
                                                    self.upload_url))
 
-        with open(os.path.join(PATH, 'files', '500years.x5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
@@ -2762,7 +2762,7 @@ class OrderFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', '500years.x5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2778,7 +2778,7 @@ class OrderFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', '500years.x5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2788,7 +2788,7 @@ class OrderFileUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 1)
         self.assertIsNone(self.raceturn.xfile)
 
-        with open(os.path.join(PATH, '__init__.py')) as f:
+        with open(os.path.join(PATH, 'test_models.py'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Not a valid Stars order file.")
@@ -2799,7 +2799,7 @@ class OrderFileUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 1)
         self.assertIsNone(self.raceturn.xfile)
 
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Not a valid Stars order file.")
@@ -2817,7 +2817,7 @@ class OrderFileUploadTestCase(TestCase):
         response = self.client.get(upload_url)
         self.assertEqual(response.status_code, 404)
 
-        with open(os.path.join(PATH, 'files', '500years.x5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(upload_url, {'file': f})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2834,7 +2834,7 @@ class OrderFileUploadTestCase(TestCase):
         response = self.client.get(upload_url)
         self.assertEqual(response.status_code, 404)
 
-        with open(os.path.join(PATH, 'files', '500years.x5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(upload_url, {'file': f})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2866,7 +2866,7 @@ class HistoryFileDownloadTestCase(TestCase):
         self.ambassador.save()
 
         self.starsfile = models.StarsFile(
-            type='h', file=SimpleUploadedFile(".h", "turn 2400"))
+            type='h', file=SimpleUploadedFile(".h", b"turn 2400"))
         self.starsfile.save()
 
         self.turn = self.game.turns.create(year=2400)
@@ -2974,7 +2974,7 @@ class HistoryFileUploadTestCase(TestCase):
         self.ambassador.save()
 
         self.starsfile = models.StarsFile(
-            type='h', file=SimpleUploadedFile(".h", "turn 2400"))
+            type='h', file=SimpleUploadedFile(".h", b"turn 2400"))
         self.starsfile.save()
 
         self.turn = self.game.turns.create(year=2400)
@@ -2996,7 +2996,7 @@ class HistoryFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 200)
 
-        with open(os.path.join(PATH, 'files', '500years.h5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(models.StarsFile.objects.count(), 2)
@@ -3014,7 +3014,7 @@ class HistoryFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', '500years.h5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -3030,7 +3030,7 @@ class HistoryFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', '500years.h5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -3048,7 +3048,7 @@ class HistoryFileUploadTestCase(TestCase):
                              "{0}?next={1}".format(settings.LOGIN_URL,
                                                    self.upload_url))
 
-        with open(os.path.join(PATH, 'files', '500years.h5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
@@ -3067,7 +3067,7 @@ class HistoryFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', '500years.h5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -3083,7 +3083,7 @@ class HistoryFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 403)
 
-        with open(os.path.join(PATH, 'files', '500years.h5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -3093,7 +3093,7 @@ class HistoryFileUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 1)
         self.assertIsNone(self.raceturn.hfile)
 
-        with open(os.path.join(PATH, '__init__.py')) as f:
+        with open(os.path.join(PATH, 'test_models.py'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Not a valid Stars history file.")
@@ -3104,7 +3104,7 @@ class HistoryFileUploadTestCase(TestCase):
         self.assertEqual(models.StarsFile.objects.count(), 1)
         self.assertIsNone(self.raceturn.hfile)
 
-        with open(os.path.join(PATH, 'files', 'ulf_war.xy')) as f:
+        with open(os.path.join(PATH, 'files', 'ulf_war.xy'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Not a valid Stars history file.")
@@ -3122,7 +3122,7 @@ class HistoryFileUploadTestCase(TestCase):
         response = self.client.get(upload_url)
         self.assertEqual(response.status_code, 404)
 
-        with open(os.path.join(PATH, 'files', '500years.h5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(upload_url, {'file': f})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -3139,7 +3139,7 @@ class HistoryFileUploadTestCase(TestCase):
         response = self.client.get(upload_url)
         self.assertEqual(response.status_code, 404)
 
-        with open(os.path.join(PATH, 'files', '500years.h5')) as f:
+        with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(upload_url, {'file': f})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(models.StarsFile.objects.count(), 1)
