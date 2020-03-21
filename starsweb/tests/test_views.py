@@ -1,16 +1,18 @@
 from __future__ import absolute_import
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.files import File
-from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User
-from django.utils.html import escape
-from django.test import TestCase
-from django.conf import settings
 
 import os
 
-from .. import models
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.files import File
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase
+from django.urls import reverse
+from django.utils.html import escape
+
 from six.moves import zip
+
+from .. import models
 
 PATH = os.path.dirname(__file__)
 

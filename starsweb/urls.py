@@ -1,14 +1,14 @@
 from __future__ import absolute_import
-from django.conf.urls import patterns, url, include
-from django.core.urlresolvers import reverse_lazy
-from django.views.generic import RedirectView
+
 from django.conf import settings
+from django.conf.urls import url, include
+from django.urls import reverse_lazy
+from django.views.generic import RedirectView
 
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$', RedirectView.as_view(url=reverse_lazy('game_list'), permanent=False)),
     url(r'^user/$', views.UserDashboard.as_view(),
         name='user_dashboard'),
@@ -66,14 +66,13 @@ urlpatterns = patterns(
         views.HistoryFileDownload.as_view(), name='history_download'),
     url(r'^game/(?P<game_slug>[-\w]+)/history/(?P<race_slug>[-\w]+)/upload/$',
         views.HistoryFileUpload.as_view(), name='history_upload'),
-)
+]
 
 if 'micropress' in settings.INSTALLED_APPS:
     # optional django-micro-press
-    urlpatterns += patterns(
-        '',
+    urlpatterns += [
         (r'^game/(?P<realm_slug>[-\w]+)/news/',
          include('micropress.urls', namespace="starsweb",
                  app_name="micropress"),
          {'realm_content_type': 'starsweb.Game'}),
-    )
+    ]

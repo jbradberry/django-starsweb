@@ -6,4 +6,5 @@ starslib
 MANIFEST
 TODO
 *.db3
+*.sqlite3
 *.bak

@@ -1,23 +1,23 @@
 from __future__ import absolute_import
+import glob
 import logging
 import os.path
-import uuid
-import glob
-import tempfile
 import shutil
+import tempfile
+import uuid
 
 from django.core.files.base import ContentFile
-from django.core.urlresolvers import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.template.defaultfilters import slugify
+from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
+import six
+from six.moves import zip
 
 from starslib import base
 
 from . import markup, processing
-import six
-from six.moves import zip
 
 logger = logging.getLogger(__name__)
 

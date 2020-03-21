@@ -1,23 +1,24 @@
 from __future__ import absolute_import
+import json
+
+from django.contrib import messages
+from django.contrib.auth.decorators import permission_required, login_required
+from django.core.exceptions import PermissionDenied
+from django.core.files.base import ContentFile
+from django.db.models import Max
+from django.http import Http404
+from django.template.defaultfilters import slugify
+from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   DeleteView, TemplateView, View)
-from django.contrib.auth.decorators import permission_required, login_required
-from django.utils.decorators import method_decorator
-from django.template.defaultfilters import slugify
-from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse_lazy
-from django.http import Http404
-from django.core.files.base import ContentFile
-from django.contrib import messages
-from django.db.models import Max
-
 from sendfile import sendfile
+from six.moves import range
+
 from starslib import base
-import json
 
 from . import models
 from . import forms
-from six.moves import range
 
 
 class GameListView(ListView):
