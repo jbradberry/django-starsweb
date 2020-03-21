@@ -14,12 +14,12 @@ Requirements
 ------------
 - Python 2.7, 3.5+
 - Django >= 1.8, < 2.0
-- django-sendfile_
+- django-sendfile2_
 - django-template-utils_
 - lxml
 - starslib
 
-.. _django-sendfile: https://github.com/johnsensible/django-sendfile
+.. _django-sendfile2: https://github.com/moggers87/django-sendfile2
 .. _django-template-utils: https://bitbucket.org/ubernostrum/django-template-utils
 
 Recommended
