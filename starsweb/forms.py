@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django import forms
 from django.db.models import BLANK_CHOICE_DASH
 from django.template.defaultfilters import slugify
@@ -5,6 +6,8 @@ from django.template.defaultfilters import slugify
 from starslib import base
 
 from . import models
+from six.moves import range
+from six.moves import zip
 
 
 class CreateGameForm(forms.ModelForm):
@@ -18,14 +21,14 @@ class AiPlayersWidget(forms.MultiWidget):
         _widgets = [
             forms.Select(attrs=attrs,
                          choices=BLANK_CHOICE_DASH + list(w))
-            for x in xrange(16)
+            for x in range(16)
             for w in (models.GameOptions.AI_RACES,
                       models.GameOptions.AI_SKILL_LEVELS)
         ]
         return super(AiPlayersWidget, self).__init__(_widgets, attrs)
 
     def decompress(self, value):
-        new_value = [None for x in xrange(32)]
+        new_value = [None for x in range(32)]
         if value:
             values = [int(x.strip()) for x in value.split(',')]
             L = len(values) // 2 * 2
@@ -40,7 +43,7 @@ class AiPlayers(forms.MultiValueField):
         fields = [
             forms.ChoiceField(choices=BLANK_CHOICE_DASH + list(w),
                               required=False)
-            for x in xrange(16)
+            for x in range(16)
             for w in (models.GameOptions.AI_RACES,
                       models.GameOptions.AI_SKILL_LEVELS)
         ]

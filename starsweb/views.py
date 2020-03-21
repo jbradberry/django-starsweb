@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   DeleteView, TemplateView, View)
 from django.contrib.auth.decorators import permission_required, login_required
@@ -16,6 +17,7 @@ import json
 
 from . import models
 from . import forms
+from six.moves import range
 
 
 class GameListView(ListView):
@@ -48,8 +50,8 @@ class GameDetailView(DetailView):
                                    ).values_list('race__plural_name', 'value'))
         context['races'] = sorted(((race, scores.get(str(race)))
                                    for race in self.object.races.all()),
-                                  key=lambda (r, s): (s if s is None else -s,
-                                                      r.player_number, r.pk))
+                                  key=lambda r_s: (r_s[1] if r_s[1] is None else -r_s[1],
+                                                      r_s[0].player_number, r_s[0].pk))
         context.update(kwargs)
         return super(GameDetailView, self).get_context_data(**context)
 
@@ -542,7 +544,7 @@ class ScoreGraphView(DetailView):
                 models.Score.TOKEN_VALUES[item['section']], {})
             race_scores = section_set.setdefault(
                 item['race__plural_name'],
-                [None for x in xrange(year_min, year_max+1)])
+                [None for x in range(year_min, year_max+1)])
             race_scores[item['turn__year'] - year_min] = item['value']
 
         context = {

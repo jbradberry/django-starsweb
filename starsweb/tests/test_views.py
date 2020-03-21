@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files import File
 from django.core.urlresolvers import reverse
@@ -9,6 +10,7 @@ from django.conf import settings
 import os
 
 from .. import models
+from six.moves import zip
 
 PATH = os.path.dirname(__file__)
 
@@ -57,7 +59,7 @@ class GameDetailViewTestCase(TestCase):
         self.assertContains(response, "The SSG")
         self.assertIn('races', response.context)
 
-        races = zip(*response.context['races'])
+        races = list(zip(*response.context['races']))
         self.assertEqual(races[0], (self.race1, self.race2, self.race3))
         self.assertEqual(races[1], (None, None, None))
 
@@ -74,7 +76,7 @@ class GameDetailViewTestCase(TestCase):
         self.assertContains(response, "The Phizz")
         self.assertContains(response, "The SSG")
 
-        races = zip(*response.context['races'])
+        races = list(zip(*response.context['races']))
         self.assertEqual(races[0], (self.race2, self.race1, self.race3))
         self.assertEqual(races[1], (None, None, None))
 
@@ -101,7 +103,7 @@ class GameDetailViewTestCase(TestCase):
         self.assertContains(response, "The Phizz")
         self.assertContains(response, "The SSG")
 
-        races = zip(*response.context['races'])
+        races = list(zip(*response.context['races']))
         self.assertEqual(races[0], (self.race3, self.race2, self.race1))
         self.assertEqual(races[1], (576, 430, 247))
 
@@ -132,7 +134,7 @@ class GameDetailViewTestCase(TestCase):
         self.assertContains(response, "The Phizz")
         self.assertContains(response, "The SSG")
 
-        races = zip(*response.context['races'])
+        races = list(zip(*response.context['races']))
         self.assertEqual(races[0], (self.race2, self.race1, self.race3))
         self.assertEqual(races[1], (6702, 5097, 0))
 
@@ -171,7 +173,7 @@ class GameDetailViewTestCase(TestCase):
         self.assertContains(response, "The Phizz")
         self.assertContains(response, "The SSG")
 
-        races = zip(*response.context['races'])
+        races = list(zip(*response.context['races']))
         self.assertEqual(races[0], (self.race2, self.race1, self.race3))
         self.assertEqual(races[1], (6702, 5097, 3592))
 

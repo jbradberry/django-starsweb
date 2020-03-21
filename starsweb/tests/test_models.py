@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 import shutil
 
@@ -151,10 +152,7 @@ class GameTestCase(TestCase):
             r2.save()
 
         # Activate the game.
-        try:
-            g.generate()
-        except Exception as e:
-            self.fail(e)
+        g.generate()
 
         g = models.Game.objects.get(pk=g.pk)
 
@@ -180,10 +178,7 @@ class GameTestCase(TestCase):
         mock_execute.side_effect = se_generate
 
         # Generate a turn for already active game.
-        try:
-            g.generate()
-        except Exception as e:
-            self.fail(e)
+        g.generate()
 
         g = models.Game.objects.get(pk=g.pk)
 

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.conf.urls import patterns, url, include
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView

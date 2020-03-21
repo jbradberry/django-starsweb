@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import logging
 import os.path
 import uuid
@@ -14,6 +15,8 @@ from django.template.defaultfilters import slugify
 from starslib import base
 
 from . import markup, processing
+import six
+from six.moves import zip
 
 logger = logging.getLogger(__name__)
 
@@ -556,7 +559,7 @@ class Race(models.Model):
     @property
     def all_ambassadors(self):
         if self.ambassadors.exists():
-            return u' / '.join(unicode(a) for a in self.ambassadors.all())
+            return u' / '.join(six.text_type(a) for a in self.ambassadors.all())
 
     @property
     def number(self):
@@ -637,7 +640,7 @@ class Turn(models.Model):
         ordering = ('-generated',)
 
     def __unicode__(self):
-        return unicode(self.year)
+        return six.text_type(self.year)
 
 
 class RaceTurn(models.Model):
