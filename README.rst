@@ -12,14 +12,14 @@ A hosting app for the classic 4X space strategy game Stars_.
 
 Requirements
 ------------
-- Python >= 2.7
-- Django >= 1.6, < 1.9
-- django-sendfile_
+- Python 2.7, 3.5+
+- Django >= 1.10, < 2.3
+- django-sendfile2_
 - django-template-utils_
 - lxml
 - starslib
 
-.. _django-sendfile: https://github.com/johnsensible/django-sendfile
+.. _django-sendfile2: https://github.com/moggers87/django-sendfile2
 .. _django-template-utils: https://bitbucket.org/ubernostrum/django-template-utils
 
 Recommended

@@ -1,18 +1,21 @@
+from __future__ import absolute_import
+import json
+
+from django.contrib import messages
+from django.contrib.auth.decorators import permission_required, login_required
+from django.core.exceptions import PermissionDenied
+from django.core.files.base import ContentFile
+from django.db.models import Max
+from django.http import Http404
+from django.template.defaultfilters import slugify
+from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   DeleteView, TemplateView, View)
-from django.contrib.auth.decorators import permission_required, login_required
-from django.utils.decorators import method_decorator
-from django.template.defaultfilters import slugify
-from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse_lazy
-from django.http import Http404
-from django.core.files.base import ContentFile
-from django.contrib import messages
-from django.db.models import Max
-
 from sendfile import sendfile
+from six.moves import range
+
 from starslib import base
-import json
 
 from . import models
 from . import forms
@@ -48,8 +51,8 @@ class GameDetailView(DetailView):
                                    ).values_list('race__plural_name', 'value'))
         context['races'] = sorted(((race, scores.get(str(race)))
                                    for race in self.object.races.all()),
-                                  key=lambda (r, s): (s if s is None else -s,
-                                                      r.player_number, r.pk))
+                                  key=lambda r_s: (r_s[1] if r_s[1] is None else -r_s[1],
+                                                      r_s[0].player_number, r_s[0].pk))
         context.update(kwargs)
         return super(GameDetailView, self).get_context_data(**context)
 
@@ -270,8 +273,8 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
 
         if racefile:
             sf = base.StarsFile()
-            try:
-                racefile.file.open()
+            try:  # FIXME
+                racefile.file.open('rb')
                 data = racefile.file.read()
                 sf.bytes = data
             finally:
@@ -542,7 +545,7 @@ class ScoreGraphView(DetailView):
                 models.Score.TOKEN_VALUES[item['section']], {})
             race_scores = section_set.setdefault(
                 item['race__plural_name'],
-                [None for x in xrange(year_min, year_max+1)])
+                [None for x in range(year_min, year_max+1)])
             race_scores[item['turn__year'] - year_min] = item['value']
 
         context = {
@@ -687,8 +690,8 @@ class RaceFileBind(ParentGameMixin, UpdateView):
 
         if racefile:
             sf = base.StarsFile()
-            try:
-                racefile.file.open()
+            try:  # FIXME
+                racefile.file.open('rb')
                 data = racefile.file.read()
                 sf.bytes = data
             finally:
