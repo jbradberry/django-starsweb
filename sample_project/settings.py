@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'starsweb',
 ]
 
-SENDFILE_BACKEND = 'sendfile.backends.development'
+SENDFILE_BACKEND = 'django_sendfile.backends.development'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
