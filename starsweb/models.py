@@ -11,7 +11,6 @@ from django.core.validators import MinValueValidator, MaxValueValidator, validat
 from django.db import models
 from django.template.defaultfilters import slugify
 from django.urls import reverse
-from django.utils.encoding import python_2_unicode_compatible
 import six
 from six.moves import zip
 
@@ -79,7 +78,6 @@ class StarsFile(models.Model):
         return sfile
 
 
-@python_2_unicode_compatible
 class Game(models.Model):
     STATE_CHOICES = (
         ('S', 'Setup'),
@@ -529,7 +527,6 @@ class GameOptions(models.Model):
         return contents
 
 
-@python_2_unicode_compatible
 class Race(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='races')
     name = models.CharField(max_length=15)
@@ -567,7 +564,6 @@ class Race(models.Model):
             return self.player_number + 1
 
 
-@python_2_unicode_compatible
 class RacePage(models.Model):
     race = models.ForeignKey(Race, on_delete=models.CASCADE, related_name='racepages')
     slug = models.SlugField(max_length=32)
@@ -603,7 +599,6 @@ class RacePage(models.Model):
                                'slug': self.slug})
 
 
-@python_2_unicode_compatible
 class UserRace(models.Model):
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='starsweb_racepool')
     identifier = models.CharField(max_length=64)
@@ -616,7 +611,6 @@ class UserRace(models.Model):
         return self.identifier
 
 
-@python_2_unicode_compatible
 class Ambassador(models.Model):
     race = models.ForeignKey(Race, on_delete=models.CASCADE, related_name='ambassadors')
     user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name='starsweb_ambassadors')
@@ -630,7 +624,6 @@ class Ambassador(models.Model):
         return self.name
 
 
-@python_2_unicode_compatible
 class Turn(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='turns')
     year = models.IntegerField()
@@ -656,7 +649,6 @@ class RaceTurn(models.Model):
     uploads = models.IntegerField(default=0)
 
 
-@python_2_unicode_compatible
 class Score(models.Model):
     RANK = 0
     SCORE = 1
@@ -716,7 +708,6 @@ class Score(models.Model):
         return u"{0}: {1}".format(self.get_section_display(), self.value)
 
 
-@python_2_unicode_compatible
 class Star(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     name = models.CharField(max_length=18)

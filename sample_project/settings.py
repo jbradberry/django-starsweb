@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Application definition
 
@@ -39,8 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'starsweb',
 ]
-
-SENDFILE_BACKEND = 'django_sendfile.backends.development'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -126,5 +125,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.abspath(os.path.join(os.path.curdir, 'media'))
+SENDFILE_BACKEND = 'django_sendfile.backends.development'
+SENDFILE_ROOT = MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
