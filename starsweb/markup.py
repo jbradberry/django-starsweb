@@ -1,19 +1,16 @@
 from __future__ import absolute_import
-from template_utils.markup import formatter
 from lxml.html.clean import clean_html
+import markdown
 from django.conf import settings
 import six
 
 
-FORMATTERS = tuple((f, f) for f in six.iterkeys(formatter._filters))
-DEFAULT_MARKUP = getattr(settings, 'DEFAULT_MARKUP', "restructuredtext")
 MARKUP_FILTER_OPTS = getattr(settings, 'MARKUP_FILTER_OPTS', {})
 LXML_CLEAN_OPTS = getattr(settings, 'LXML_CLEAN_OPTS', {})
 
 
-def process(html, filter_name):
-    html = formatter(html, filter_name=filter_name,
-                     **MARKUP_FILTER_OPTS.get(filter_name, {}))
+def process(html):
+    html = markdown.markdown(html)
     if html:
         return clean_html(html, **LXML_CLEAN_OPTS)
     return u''

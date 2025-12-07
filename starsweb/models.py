@@ -92,8 +92,6 @@ class Game(models.Model):
 
     description = models.TextField(blank=True)
     description_html = models.TextField(blank=True)
-    markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
-                                   default=markup.DEFAULT_MARKUP)
 
     host = models.ForeignKey("auth.User", on_delete=models.SET(1), related_name='starsweb_games')
     created = models.DateTimeField(auto_now_add=True)
@@ -106,8 +104,7 @@ class Game(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        self.description_html = markup.process(self.description,
-                                               self.markup_type)
+        self.description_html = markup.process(self.description)
         super(Game, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -577,14 +574,12 @@ class RacePage(models.Model):
     title = models.CharField(max_length=32)
     body = models.TextField()
     body_html = models.TextField()
-    markup_type = models.CharField(max_length=32, choices=markup.FORMATTERS,
-                                   default=markup.DEFAULT_MARKUP)
 
     def __str__(self):
         return self.title
 
     def save(self, *args, **kwargs):
-        self.body_html = markup.process(self.body, self.markup_type)
+        self.body_html = markup.process(self.body)
 
         max_length = self._meta.get_field('slug').max_length
         slug, num, end = slugify(self.title), 1, ''
