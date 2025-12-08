@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import markdown
 from django.conf import settings
 

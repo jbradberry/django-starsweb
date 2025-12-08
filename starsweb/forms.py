@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from django import forms
 from django.db.models import BLANK_CHOICE_DASH
 from django.template.defaultfilters import slugify
