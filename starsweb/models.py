@@ -10,8 +10,6 @@ from django.core.validators import MinValueValidator, MaxValueValidator, validat
 from django.db import models
 from django.template.defaultfilters import slugify
 from django.urls import reverse
-import six
-from six.moves import zip
 
 from starslib import base
 
@@ -491,7 +489,7 @@ class GameOptions(models.Model):
         ]
         players.extend(
             "# {0} {1}".format(*ai)
-            for ai in zip(*[iter(self.ai_players.split(','))]*2)
+            for ai in zip(*[iter(self.ai_players.split(','))]*2)  # FIXME: maybe use itertools?
         )
         del players[16:]
 
@@ -555,7 +553,7 @@ class Race(models.Model):
     @property
     def all_ambassadors(self):
         if self.ambassadors.exists():
-            return u' / '.join(six.text_type(a) for a in self.ambassadors.all())
+            return ' / '.join(str(a) for a in self.ambassadors.all())
 
     @property
     def number(self):
@@ -634,7 +632,7 @@ class Turn(models.Model):
         ordering = ('-generated',)
 
     def __str__(self):
-        return six.text_type(self.year)
+        return str(self.year)
 
 
 class RaceTurn(models.Model):

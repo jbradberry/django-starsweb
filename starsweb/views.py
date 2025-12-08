@@ -12,7 +12,6 @@ from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   DeleteView, TemplateView, View)
 from django_sendfile import sendfile
-from six.moves import range
 
 from starslib import base
 

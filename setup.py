@@ -40,7 +40,6 @@ setup(
     package_dir={'starsweb': 'starsweb'},
     packages=packages,
     package_data={'starsweb': data_files},
-    install_requires=['six'],
     entry_points={'turngeneration.plugins': ['starsweb = starsweb.plugins:TurnGeneration']},
     classifiers=['Development Status :: 2 - Pre-Alpha',
                  'Environment :: Web Environment',

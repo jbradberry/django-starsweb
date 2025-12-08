@@ -5,8 +5,6 @@ from django.template.defaultfilters import slugify
 from starslib import base
 
 from . import models
-from six.moves import range
-from six.moves import zip
 
 
 class CreateGameForm(forms.ModelForm):
@@ -50,7 +48,7 @@ class AiPlayers(forms.MultiValueField):
 
     def compress(self, data_list):
         values = []
-        for race, skill in zip(*[iter(data_list)]*2):
+        for race, skill in zip(*[iter(data_list)]*2):  # FIXME: maybe use itertools?
             if race and skill:
                 values.extend([race, skill])
         return ','.join(values)
