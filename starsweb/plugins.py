@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from . import models
 
 
-class TurnGeneration(object):
+class TurnGeneration:
     realm_types = {
         'starsgame': 'starsweb.game',
     }

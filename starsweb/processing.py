@@ -5,7 +5,7 @@ import threading
 from django.conf import settings
 
 
-class Shared(object):
+class Shared:
     pass
 
 

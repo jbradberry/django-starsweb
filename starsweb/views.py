@@ -69,7 +69,7 @@ class GameCreateView(CreateView):
         return super(GameCreateView, self).form_valid(form)
 
 
-class ParentGameMixin(object):
+class ParentGameMixin:
     context_game_name = 'game'
 
     game_slug_field = 'slug'
@@ -733,7 +733,7 @@ class RaceFileBind(ParentGameMixin, UpdateView):
         return super(RaceFileBind, self).form_valid(form)
 
 
-class UserRaceMixin(object):
+class UserRaceMixin:
     def get_userrace(self):
         pk = self.kwargs.get('pk', None)
 
