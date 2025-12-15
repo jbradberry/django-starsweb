@@ -671,7 +671,7 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
         response = self.client.post(self.update_url,
-                                    {'name': u'\u2603',
+                                    {'name': '\u2603',
                                      'plural_name': 'Gestalti'})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response,

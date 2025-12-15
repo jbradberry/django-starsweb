@@ -702,7 +702,7 @@ class Score(models.Model):
         unique_together = ('turn', 'race', 'section')
 
     def __str__(self):
-        return u"{0}: {1}".format(self.get_section_display(), self.value)
+        return "{0}: {1}".format(self.get_section_display(), self.value)
 
 
 class Star(models.Model):
@@ -712,4 +712,4 @@ class Star(models.Model):
     y = models.IntegerField()
 
     def __str__(self):
-        return u"{s.name} ({s.x}, {s.y})".format(s=self)
+        return "{s.name} ({s.x}, {s.y})".format(s=self)

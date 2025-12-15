@@ -144,7 +144,7 @@ class ChooseUserRaceForm(forms.ModelForm):
             userrace__user=user
         )
         self.fields['racefile'].choices = [
-            (u'', self.fields['racefile'].empty_label)
+            ('', self.fields['racefile'].empty_label)
         ] + [
             (u.racefile.id, u.identifier)
             for u in models.UserRace.objects.filter(user=user,

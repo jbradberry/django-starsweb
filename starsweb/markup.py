@@ -10,4 +10,4 @@ def process(html):
     if html:
         # FIXME: use a new html cleaner, probably nh3
         return html
-    return u''
+    return ''
