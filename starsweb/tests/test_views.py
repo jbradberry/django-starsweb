@@ -248,8 +248,8 @@ class GameCreateViewTestCase(TestCase):
         create_url = reverse('create_game')
         response = self.client.get(create_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   create_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 create_url))
 
         response = self.client.post(
             create_url,
@@ -260,8 +260,8 @@ class GameCreateViewTestCase(TestCase):
              'published': True},
         )
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   create_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 create_url))
         self.assertFalse(models.Game.objects.exists())
 
     def test_attempt_create_with_anonymous_user(self):
@@ -271,8 +271,8 @@ class GameCreateViewTestCase(TestCase):
         create_url = reverse('create_game')
         response = self.client.get(create_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   create_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 create_url))
 
         response = self.client.post(
             create_url,
@@ -283,8 +283,8 @@ class GameCreateViewTestCase(TestCase):
              'published': True},
         )
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   create_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 create_url))
         self.assertFalse(models.Game.objects.exists())
 
 
@@ -402,8 +402,8 @@ class GameJoinViewTestCase(TestCase):
 
         response = self.client.get(self.join_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.join_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.join_url))
 
         response = self.client.post(
             self.join_url,
@@ -412,8 +412,8 @@ class GameJoinViewTestCase(TestCase):
              'ambassador-name': "KonTiki"}
         )
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.join_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.join_url))
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
 
@@ -690,16 +690,16 @@ class RaceUpdateViewTestCase(TestCase):
         response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.update_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.update_url))
 
         response = self.client.post(self.update_url,
                                     {'name': 'Histalti',
                                      'plural_name': 'Histalti'})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.update_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.update_url))
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Race.objects.get().name, "Gestalti")
 
@@ -888,15 +888,15 @@ class AmbassadorUpdateViewTestCase(TestCase):
         response = self.client.get(self.update_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.update_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.update_url))
 
         response = self.client.post(self.update_url,
                                     {'name': 'Kon-Tiki'})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.update_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.update_url))
         self.assertEqual(models.Ambassador.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.get().name, "KonTiki")
 
@@ -1267,8 +1267,8 @@ class RaceDashboardViewTestCase(TestCase):
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.dashboard_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.dashboard_url))
 
 
 class UserDashboardTestCase(TestCase):
@@ -1389,8 +1389,8 @@ class UserDashboardTestCase(TestCase):
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.dashboard_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.dashboard_url))
 
 
 class UserRaceCreateTestCase(TestCase):
@@ -1427,14 +1427,14 @@ class UserRaceCreateTestCase(TestCase):
 
         response = self.client.get(self.create_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.create_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.create_url))
 
         response = self.client.post(self.create_url,
                                     {'identifier': "Gestalti v1"})
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.create_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.create_url))
 
         self.assertEqual(models.UserRace.objects.count(), 0)
 
@@ -1512,14 +1512,14 @@ class UserRaceUpdateTestCase(TestCase):
 
         response = self.client.get(self.update_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.update_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.update_url))
 
         response = self.client.post(self.update_url,
                                     {'identifier': "Histalti"})
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.update_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.update_url))
         self.assertEqual(models.UserRace.objects.count(), 1)
         userrace = models.UserRace.objects.get()
         self.assertEqual(userrace.user, self.user)
@@ -1610,13 +1610,13 @@ class UserRaceDeleteTestCase(TestCase):
 
         response = self.client.get(self.delete_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.delete_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.delete_url))
 
         response = self.client.post(self.delete_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.delete_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.delete_url))
 
         self.assertEqual(models.UserRace.objects.count(), 1)
 
@@ -1818,14 +1818,14 @@ class RaceFileBindTestCase(TestCase):
 
         response = self.client.get(self.bind_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.bind_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.bind_url))
 
         response = self.client.post(self.bind_url,
                                     {'racefile': self.starsfile.pk})
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.bind_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.bind_url))
 
         self.assertIsNone(self.race.racefile)
 
@@ -1979,8 +1979,8 @@ class UserRaceDownloadTestCase(TestCase):
 
         response = self.client.get(self.download_url)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.download_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.download_url))
 
     def test_does_not_exist(self):
         download_url = reverse('userrace_download',
@@ -2049,15 +2049,15 @@ class UserRaceUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.upload_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.upload_url))
 
         with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.upload_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.upload_url))
 
         self.assertEqual(models.StarsFile.objects.count(), 0)
         self.assertIsNone(models.UserRace.objects.get().racefile)
@@ -2190,8 +2190,8 @@ class RaceFileDownloadTestCase(TestCase):
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.download_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.download_url))
 
     def test_game_does_not_exist(self):
         self.assertEqual(models.StarsFile.objects.filter(type='r').count(), 1)
@@ -2298,15 +2298,15 @@ class RaceFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.upload_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.upload_url))
 
         with open(os.path.join(PATH, 'files', 'gestalti.r1'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.upload_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.upload_url))
         self.assertEqual(models.StarsFile.objects.count(), 0)
         self.assertIsNone(models.Race.objects.get().racefile)
 
@@ -2505,8 +2505,8 @@ class StateFileDownloadTestCase(TestCase):
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.download_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.download_url))
 
     def test_game_does_not_exist(self):
         self.assertEqual(models.StarsFile.objects.filter(type='m').count(), 1)
@@ -2613,8 +2613,8 @@ class OrderFileDownloadTestCase(TestCase):
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.download_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.download_url))
 
     def test_game_does_not_exist(self):
         self.assertEqual(models.StarsFile.objects.filter(type='x').count(), 1)
@@ -2738,15 +2738,15 @@ class OrderFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.upload_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.upload_url))
 
         with open(os.path.join(PATH, 'files', '500years.x5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.upload_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.upload_url))
         self.assertEqual(models.StarsFile.objects.count(), 1)
         self.assertIsNone(models.RaceTurn.objects.get().xfile)
 
@@ -2918,8 +2918,8 @@ class HistoryFileDownloadTestCase(TestCase):
         response = self.client.get(self.download_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.download_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.download_url))
 
     def test_game_does_not_exist(self):
         self.assertEqual(models.StarsFile.objects.filter(type='h').count(), 1)
@@ -3043,15 +3043,15 @@ class HistoryFileUploadTestCase(TestCase):
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.upload_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.upload_url))
 
         with open(os.path.join(PATH, 'files', '500years.h5'), 'rb') as f:
             response = self.client.post(self.upload_url, {'file': f})
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response,
-                             "{0}?next={1}".format(settings.LOGIN_URL,
-                                                   self.upload_url))
+                             "{}?next={}".format(settings.LOGIN_URL,
+                                                 self.upload_url))
         self.assertEqual(models.StarsFile.objects.count(), 1)
         self.assertIsNone(models.RaceTurn.objects.get().hfile)
 

@@ -105,16 +105,14 @@ class RaceForm(forms.ModelForm):
         existing_race = models.Race.objects.filter(game=game, name=name)
         if existing_race and r_id != existing_race.get().id:
             raise forms.ValidationError(
-                "The race name '{0}' is already being used for"
-                " this game.".format(name))
+                f"The race name '{name}' is already being used for this game.")
 
         plural_name = cleaned_data.get('plural_name', '')
         existing_race = models.Race.objects.filter(game=game,
                                                    plural_name=plural_name)
         if existing_race and r_id != existing_race.get().id:
             raise forms.ValidationError(
-                "The race plural_name '{0}' is already being used for"
-                " this game.".format(plural_name))
+                f"The race plural_name '{plural_name}' is already being used for this game.")
 
         max_length = self.instance._meta.get_field('slug').max_length
         slug, num, end = slugify(plural_name), 1, ''

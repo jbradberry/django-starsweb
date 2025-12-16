@@ -88,8 +88,7 @@ class ParentGameMixin:
                 **{self.game_slug_field: slug})
         else:
             raise AttributeError(
-                "{0} must be called with either a game pk or a slug.".format(
-                    self.__class__.__name__))
+                f"{self.__class__.__name__} must be called with either a game pk or a slug.")
 
         try:
             return game_queryset.get()
@@ -121,8 +120,7 @@ class ParentRaceMixin(ParentGameMixin):
                 **{self.race_slug_field: slug})
         else:
             raise AttributeError(
-                "{0} must be called with either a race pk or a slug.".format(
-                    self.__class__.__name__))
+                f"{self.__class__.__name__} must be called with either a race pk or a slug.")
 
         try:
             return race_queryset.get()
@@ -142,7 +140,7 @@ class GameMapDownload(ParentGameMixin, View):
             raise Http404
         return sendfile(
             self.request, self.game.mapfile.file.path, attachment=True,
-            attachment_filename='{name}.xy'.format(name=self.game.slug[:8]))
+            attachment_filename=f'{self.game.slug[:8]}.xy')
 
 
 class GameAdminView(ParentGameMixin, UpdateView):
@@ -758,8 +756,7 @@ class UserRaceDownload(UserRaceMixin, View):
             raise Http404
         return sendfile(
             self.request, self.userrace.racefile.file.path, attachment=True,
-            attachment_filename='{name}.r1'.format(
-                name=slugify(self.userrace.identifier)[:8])
+            attachment_filename=f'{slugify(self.userrace.identifier)[:8]}.r1'
         )
 
 
@@ -855,7 +852,7 @@ class RaceFileDownload(ParentRaceMixin, View):
 
         return sendfile(
             self.request, self.race.racefile.file.path, attachment=True,
-            attachment_filename='{name}.r1'.format(name=self.race.slug))
+            attachment_filename=f'{self.race.slug}.r1')
 
 
 class RaceFileUpload(ParentRaceMixin, CreateView):
@@ -945,8 +942,8 @@ class StateFileDownload(ParentRaceMixin, View):
 
         return sendfile(
             self.request, raceturn.mfile.file.path, attachment=True,
-            attachment_filename='{name}.m{num}'.format(
-                name=self.game.slug[:8], num=self.race.player_number + 1))
+            attachment_filename=f'{self.game.slug[:8]}.m{self.race.player_number + 1}'
+        )
 
 
 class OrderFileDownload(ParentRaceMixin, View):
@@ -972,8 +969,8 @@ class OrderFileDownload(ParentRaceMixin, View):
 
         return sendfile(
             self.request, raceturn.xfile.file.path, attachment=True,
-            attachment_filename='{name}.x{num}'.format(
-                name=self.game.slug[:8], num=self.race.player_number + 1))
+            attachment_filename=f'{self.game.slug[:8]}.x{self.race.player_number + 1}'
+        )
 
 
 class OrderFileUpload(ParentRaceMixin, CreateView):
@@ -1064,8 +1061,8 @@ class HistoryFileDownload(ParentRaceMixin, View):
 
         return sendfile(
             self.request, raceturn.hfile.file.path, attachment=True,
-            attachment_filename='{name}.h{num}'.format(
-                name=self.game.slug[:8], num=self.race.player_number + 1))
+            attachment_filename=f'{self.game.slug[:8]}.h{self.race.player_number + 1}'
+        )
 
 
 class HistoryFileUpload(ParentRaceMixin, CreateView):

@@ -69,8 +69,7 @@ class StarsFile(models.Model):
         sfile.bytes = data
 
         if type is not None and sfile.type != type:
-            raise ValueError("Expected StarsFile type {0},"
-                             " received {1}.".format(type, sfile.type))
+            raise ValueError(f"Expected StarsFile type {type}, received {sfile.type}.")
 
         return sfile
 
@@ -113,17 +112,15 @@ class Game(models.Model):
     def _tempdir_create(self):
         # Create a temporary directory for Stars to work in.
         path = tempfile.mkdtemp()
-        winpath = r'Z:{0}\\'.format(path.replace('/', r'\\'))
+        winpath = r'Z:{}\\'.format(path.replace('/', r'\\'))
 
-        logger.info("Created temp directory for '{game.name}' (pk={game.pk}):"
-                    " {path}".format(game=self, path=path))
+        logger.info(f"Created temp directory for '{self.name}' (pk={self.pk}): {path}")
         return path, winpath
 
     def _tempdir_remove(self, path):
         # Delete the temp directory.
         shutil.rmtree(path)
-        logger.info("Deleted temp directory for '{game.name}' (pk={game.pk}):"
-                    " {path}".format(game=self, path=path))
+        logger.info(f"Deleted temp directory for '{self.name}' (pk={self.pk}): {path}")
 
     def generate(self):
         path, winpath = self._tempdir_create()
@@ -134,8 +131,7 @@ class Game(models.Model):
             self._generate(path, winpath)
         else:
             logger.error(
-                "Game generation attempted on inactive game '{game.name}'"
-                " (pk={game.pk}, state={game.state}).".format(game=self)
+                f"Game generation attempted on inactive game '{self.name}' (pk={self.pk}, state={self.state})."
             )
 
         self._tempdir_remove(path)
@@ -165,7 +161,7 @@ class Game(models.Model):
             race.official_racefile = new_starsfile
 
             # Write out the race file to the temp directory.
-            filename = 'race.r{0}'.format(race.player_number + 1)
+            filename = f'race.r{race.player_number + 1}'
             with open(os.path.join(path, filename), 'wb') as f:
                 f.write(new_starsfile._data)
 
@@ -179,8 +175,7 @@ class Game(models.Model):
             f.write(opts)
 
         # Call out to Stars to create the new game files.
-        logger.info("Generating start files for '{game.name}'"
-                    " (pk={game.pk}).".format(game=self))
+        logger.info(f"Generating start files for '{self.name}' (pk={self.pk}).")
 
         processing.activate(winpath)
 
@@ -222,7 +217,7 @@ class Game(models.Model):
 
                 # Write out the x file to the temp directory.
                 target = os.path.join(
-                    path, 'game.x{0}'.format(raceturn.race.player_number + 1))
+                    path, f'game.x{raceturn.race.player_number + 1}')
                 with open(target, 'wb') as f:
                     f.write(raceturn.xfile_official._data)
 
@@ -234,10 +229,10 @@ class Game(models.Model):
 
     def _process_host(self, path):
         # Fetch the host file and parse it.
-        hst_files = glob.glob('{0}/*.hst'.format(path))
+        hst_files = glob.glob(f'{path}/*.hst')
         if len(hst_files) != 1:
             raise Exception(
-                "Expected one hst file, found {0}.".format(len(hst_files)))
+                f"Expected one hst file, found {len(hst_files)}.")
 
         with open(hst_files[0], 'rb') as f:
             hst = StarsFile.from_data(f.read())
@@ -246,10 +241,10 @@ class Game(models.Model):
 
     def _process_activation(self, path, host):
         # Process and attach the game.xy map file.
-        xy_files = glob.glob('{0}/*.xy'.format(path))
+        xy_files = glob.glob(f'{path}/*.xy')
         if len(xy_files) != 1:
             raise Exception(
-                "Expected one xy file, found {0}.".format(len(xy_files)))
+                f"Expected one xy file, found {len(xy_files)}.")
 
         with open(xy_files[0], 'rb') as f:
             self.mapfile = StarsFile.from_data(f.read())
@@ -268,7 +263,7 @@ class Game(models.Model):
             # Grab the name and plural name out of the race struct.
             name, plural_name = r.race_name, r.plural_race_name
             if not plural_name:
-                plural_name = '{0}s'.format(name)
+                plural_name = f'{name}s'
 
             # If the race object doesn't exist yet, it's an AI player,
             # so create it.
@@ -296,7 +291,7 @@ class Game(models.Model):
         scores_unmatched = set((race, section) for race in races
                                for sfield, section in Score.FIELDS)
 
-        for m_name in glob.glob('{0}/*.m[0-9]*'.format(path)):
+        for m_name in glob.glob(f'{path}/*.m[0-9]*'):
             with open(m_name, 'rb') as f:
                 mfile = StarsFile.from_data(f.read())
 
@@ -329,8 +324,7 @@ class Game(models.Model):
         # data from the other m files.
         if scores_unmatched and scores:
             logger.info(
-                "Filling in blanks for players,"
-                " game id: {0}, players: ({1})".format(
+                "Filling in blanks for players, game id: {}, players: ({})".format(
                     self.id,
                     ', '.join(str(player)
                               for player, section in scores_unmatched)
@@ -340,9 +334,7 @@ class Game(models.Model):
             for player, section in scores_unmatched:
                 if len(scores[(player, section)]) > 1:
                     logger.info(
-                        "More than one distinct score found,"
-                        " game id: {0}, player: {1}, section: {2}".format(
-                            self.id, player, section)
+                        f"More than one distinct score found, game id: {self.id}, player: {player}, section: {section}"
                     )
 
                 turn.scores.create(
@@ -472,24 +464,23 @@ class GameOptions(models.Model):
     def opt_format(option):
         if option is None:
             return "0"
-        return "1 {0}".format(option)
+        return f"1 {option}"
 
     def render(self, path):
-        boolean_opts = ("{self.maximum_minerals:d} {self.slow_tech:d}"
-                        " {self.accelerated_bbs:d} {random_events:d}"
-                        " {self.computer_alliances:d} {self.public_scores:d}"
-                        " {self.galaxy_clumping:d}".format(
-                            self=self, random_events=not self.random_events))
+        random_events = not self.random_events
+        boolean_opts = (
+            f"{self.maximum_minerals:d} {self.slow_tech:d} {self.accelerated_bbs:d} {random_events:d}"
+            f" {self.computer_alliances:d} {self.public_scores:d} {self.galaxy_clumping:d}"
+        )
 
         races = self.game.races.filter(player_number__isnull=False
                                        ).order_by('player_number')
         players = [
-            "{path}race.r{i}".format(path=path, i=race.player_number + 1)
-            for race in races
+            f"{path}race.r{race.player_number + 1}" for race in races
         ]
         players.extend(
-            "# {0} {1}".format(*ai)
-            for ai in zip(*[iter(self.ai_players.split(','))]*2)  # FIXME: maybe use itertools?
+            "# {} {}".format(*ai)
+            for ai in zip(*[iter(self.ai_players.split(','))]*2)
         )
         del players[16:]
 
@@ -512,14 +503,13 @@ class GameOptions(models.Model):
            num_players=len(players),
            player_desc="\n".join(players),
            vc_pct_planets=self.opt_format(self.percent_planets),
-           vc_tech_levels=0 if self.tech_level is None else "1 {0} {1}".format(
-               self.tech_level, self.tech_fields),
+           vc_tech_levels=0 if self.tech_level is None else f"1 {self.tech_level} {self.tech_fields}",
            vc_score=self.opt_format(self.score),
            vc_pct_exceeds=self.opt_format(self.exceeds_nearest_score),
            vc_production=self.opt_format(self.production),
            vc_capships=self.opt_format(self.capital_ships),
            vc_highest_score_after=self.opt_format(self.highest_score_after_years),
-           file_path="{0}{1}.xy".format(path, self.game.slug[:8]))
+           file_path=f"{path}{self.game.slug[:8]}.xy")
 
         return contents
 
@@ -581,7 +571,7 @@ class RacePage(models.Model):
 
         while self.race.racepages.filter(slug=slug+end).exists():
             num += 1
-            end = "-{0}".format(num)
+            end = f"-{num}"
             if len(slug) + len(end) > max_length:
                 slug = slug[:max_length - len(end)]
 
@@ -702,7 +692,7 @@ class Score(models.Model):
         unique_together = ('turn', 'race', 'section')
 
     def __str__(self):
-        return "{0}: {1}".format(self.get_section_display(), self.value)
+        return f"{self.get_section_display()}: {self.value}"
 
 
 class Star(models.Model):
@@ -712,4 +702,4 @@ class Star(models.Model):
     y = models.IntegerField()
 
     def __str__(self):
-        return "{s.name} ({s.x}, {s.y})".format(s=self)
+        return f"{self.name} ({self.x}, {self.y})"

@@ -16,16 +16,14 @@ def _target(obj, cmd):
 
 def activate(winpath):
     commandline = shlex.split(
-        r'wine C:\\stars\\stars!.exe'
-        r' -a {winpath}game.def'.format(winpath=winpath)
+        rf'wine C:\\stars\\stars!.exe -a {winpath}game.def'
     )
     execute(commandline)
 
 
 def generate(winpath):
     commandline = shlex.split(
-        r'wine C:\\stars\\stars\!.exe'
-        r' -g {winpath}game.hst'.format(winpath=winpath)
+        rf'wine C:\\stars\\stars\!.exe -g {winpath}game.hst'
     )
     execute(commandline)
 
