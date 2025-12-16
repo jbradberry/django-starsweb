@@ -1,7 +1,7 @@
-from django.conf.urls import include, url
+from django.urls import include, path
 
 
 urlpatterns = [
-    url(r'^', include('starsweb.urls')),
-    url(r'^accounts/', include('django.contrib.auth.urls')),
+    path('', include('starsweb.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
