@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 
 from django.contrib import messages
@@ -532,13 +533,10 @@ class ScoreGraphView(DetailView):
             year_min = min(x['turn__year'] for x in scores)
             year_max = max(x['turn__year'] for x in scores)
 
-        score_data = {}
+        score_data = defaultdict(lambda: defaultdict(dict))
         for item in scores:
-            section_set = score_data.setdefault(
-                models.Score.TOKEN_VALUES[item['section']], {})
-            race_scores = section_set.setdefault(
-                item['race__plural_name'],
-                [None for x in range(year_min, year_max+1)])
+            section_set = score_data[models.Score.TOKEN_VALUES[item['section']]]
+            race_scores = section_set[item['race__plural_name']] = [None for x in range(year_min, year_max+1)]
             race_scores[item['turn__year'] - year_min] = item['value']
 
         context = {

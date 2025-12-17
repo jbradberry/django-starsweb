@@ -1,3 +1,4 @@
+from collections import defaultdict
 import glob
 import logging
 import os.path
@@ -285,7 +286,7 @@ class Game(models.Model):
 
         # Process the m files.
         races = {r.player_number: r for r in self.races.filter(player_number__isnull=False)}
-        scores = {}
+        scores = defaultdict(set)
         scores_unmatched = {(race, section) for race in races for sfield, section in Score.FIELDS}
 
         for m_name in glob.glob(f'{path}/*.m[0-9]*'):
@@ -308,13 +309,12 @@ class Game(models.Model):
 
                     # Save all scores from this file, to potentially
                     # fill in any blanks in the record.
-                    scores.setdefault((S.player, section), set()).add(value)  # FIXME: defaultdict
+                    scores[(S.player, section)].add(value)
 
                     # A player's own score record is canonical, so use
                     # that if available.
                     if S.player == player:
-                        turn.scores.create(
-                            race=races[player], section=section, value=value)
+                        turn.scores.create(race=races[player], section=section, value=value)
                         scores_unmatched.remove((S.player, section))
 
         # If there are any blank scores left over, fill them in with
