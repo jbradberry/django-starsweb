@@ -17,6 +17,9 @@ classifiers = [
   "Topic :: Games/Entertainment :: Turn Based Strategy",
 ]
 
+[project.entry-points."turngeneration.plugins"]
+starsweb = "starsweb.plugins:TurnGeneration"
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
