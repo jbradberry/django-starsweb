@@ -522,10 +522,12 @@ class Race(models.Model):
     homepage = models.ForeignKey('RacePage', on_delete=models.SET_NULL, null=True, related_name='+')
 
     class Meta:
-        unique_together = (('game', 'slug'),
-                           ('game', 'name'),
-                           ('game', 'plural_name'),
-                           ('game', 'player_number'))
+        constraints = [
+            models.UniqueConstraint(fields=('game', 'slug'), name='race_slug_per_game'),
+            models.UniqueConstraint(fields=('game', 'name'), name='race_name_per_game'),
+            models.UniqueConstraint(fields=('game', 'plural_name'), name='race_plural_name_per_game'),
+            models.UniqueConstraint(fields=('game', 'player_number'), name='race_player_number_per_game'),
+        ]
 
     def __str__(self):
         return self.plural_name
@@ -586,7 +588,7 @@ class UserRace(models.Model):
     racefile = models.ForeignKey(StarsFile, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
-        unique_together = ('user', 'identifier')
+        constraints = [models.UniqueConstraint(fields=('user', 'identifier'), name='userrace_identifier_per_user')]
 
     def __str__(self):
         return self.identifier
@@ -599,7 +601,7 @@ class Ambassador(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = ('race', 'user')
+        constraints = [models.UniqueConstraint(fields=('race', 'user'), name='ambassador_user_per_race')]
 
     def __str__(self):
         return self.name
@@ -680,7 +682,7 @@ class Score(models.Model):
 
     class Meta:
         ordering = ('-turn', 'race')
-        unique_together = ('turn', 'race', 'section')
+        constraints = [models.UniqueConstraint(fields=('turn', 'race', 'section'), name='score_datapoint')]
 
     def __str__(self):
         return f"{self.get_section_display()}: {self.value}"
