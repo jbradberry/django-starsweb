@@ -1,0 +1,3 @@
+recursive-include turngeneration/static *
+recursive-include turngeneration/templates *
+global-exclude *~
