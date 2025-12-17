@@ -47,10 +47,8 @@ class GameDetailView(DetailView):
             scores.update(
                 turn.scores.filter(section=models.Score.SCORE
                                    ).values_list('race__plural_name', 'value'))
-        context['races'] = sorted(((race, scores.get(str(race)))
-                                   for race in self.object.races.all()),
-                                  key=lambda r_s: (r_s[1] if r_s[1] is None else -r_s[1],
-                                                      r_s[0].player_number, r_s[0].pk))
+        context['races'] = sorted(((race, scores.get(str(race))) for race in self.object.races.all()),
+                                  key=lambda r_s: (r_s[1] if r_s[1] is None else -r_s[1], r_s[0].player_number, r_s[0].pk))
         context.update(kwargs)
         return super(GameDetailView, self).get_context_data(**context)
 
@@ -527,8 +525,7 @@ class ScoreGraphView(DetailView):
             turn__game=self.object
         ).values('section', 'turn__year', 'race__plural_name', 'value')
 
-        races = list(self.object.races.values_list(
-            'plural_name', flat=True).order_by('id'))
+        races = self.object.races.values_list('plural_name', flat=True).order_by('id')
 
         year_min, year_max = 2400, 2400
         if scores:
@@ -545,7 +542,7 @@ class ScoreGraphView(DetailView):
             race_scores[item['turn__year'] - year_min] = item['value']
 
         context = {
-            'races': json.dumps(races),
+            'races': json.dumps(list(races)),
             'visible_races': json.dumps(
                 self.request.GET.getlist('races[]', [])),
             'section': self.request.GET.get('section', 'score'),

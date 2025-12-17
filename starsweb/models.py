@@ -251,8 +251,7 @@ class Game(models.Model):
         self.save()
 
         # Check the resultant races for any that need to be created or changed.
-        races = dict((r.player_number, r)
-                     for r in self.races.filter(player_number__isnull=False))
+        races = {r.player_number: r for r in self.races.filter(player_number__isnull=False)}
 
         for r in host._sfile.structs:
             if r.type != 6:  # Type 6 is the Race data structure.
@@ -285,11 +284,9 @@ class Game(models.Model):
                                  hstfile=host)
 
         # Process the m files.
-        races = dict((r.player_number, r)
-                     for r in self.races.filter(player_number__isnull=False))
+        races = {r.player_number: r for r in self.races.filter(player_number__isnull=False)}
         scores = {}
-        scores_unmatched = set((race, section) for race in races
-                               for sfield, section in Score.FIELDS)
+        scores_unmatched = {(race, section) for race in races for sfield, section in Score.FIELDS}
 
         for m_name in glob.glob(f'{path}/*.m[0-9]*'):
             with open(m_name, 'rb') as f:
@@ -311,7 +308,7 @@ class Game(models.Model):
 
                     # Save all scores from this file, to potentially
                     # fill in any blanks in the record.
-                    scores.setdefault((S.player, section), set()).add(value)
+                    scores.setdefault((S.player, section), set()).add(value)  # FIXME: defaultdict
 
                     # A player's own score record is canonical, so use
                     # that if available.
@@ -473,11 +470,8 @@ class GameOptions(models.Model):
             f" {self.computer_alliances:d} {self.public_scores:d} {self.galaxy_clumping:d}"
         )
 
-        races = self.game.races.filter(player_number__isnull=False
-                                       ).order_by('player_number')
-        players = [
-            f"{path}race.r{race.player_number + 1}" for race in races
-        ]
+        races = self.game.races.filter(player_number__isnull=False).order_by('player_number')
+        players = [f"{path}race.r{race.player_number + 1}" for race in races]
         players.extend(
             "# {} {}".format(*ai)
             for ai in zip(*[iter(self.ai_players.split(','))]*2)
@@ -672,15 +666,12 @@ class Score(models.Model):
     TOKENS = ('rank', 'score', 'resources', 'techlevels', 'capships',
               'escortships', 'unarmedships', 'starbases', 'planets')
 
-    TOKEN_VALUES = dict(
-        (value, token)
-        for token, (value, name) in zip(TOKENS, SECTIONS)
-    )
+    TOKEN_VALUES = {value: token for token, (value, name) in zip(TOKENS, SECTIONS)}
 
-    NAMES = tuple(
+    NAMES = [
         (token, name)
         for token, (value, name) in zip(TOKENS, SECTIONS)
-    )
+    ]
 
     turn = models.ForeignKey(Turn, on_delete=models.CASCADE, related_name='scores')
     race = models.ForeignKey(Race, on_delete=models.CASCADE, related_name='scores')
