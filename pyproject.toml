@@ -1,7 +1,7 @@
 [project]
 name = "django-starsweb"
 version = "2.0.0"
-requires-python = ">= 3.8"
+requires-python = ">= 3.10"
 authors = [
   {name = "Jeff Bradberry", email = "jeff.bradberry@gmail.com"},
 ]
@@ -11,9 +11,9 @@ license = "MIT"
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Games/Entertainment :: Turn Based Strategy",
 ]
 
