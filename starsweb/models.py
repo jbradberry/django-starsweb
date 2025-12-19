@@ -29,18 +29,83 @@ def starsfile_path(instance, filename):
     )
 
 
-class StarsFile(models.Model):
-    STARS_TYPES = (('r', 'race'),
-                   ('xy', 'map'),
-                   ('m', 'state'),
-                   ('x', 'orders'),
-                   ('h', 'history'),
-                   ('hst', 'host'))
+class StarsFileType(models.TextChoices):
+    RACE = 'r', "race"
+    MAP = 'xy', "map"
+    STATE = 'm', "state"
+    ORDERS = 'x', "orders"
+    HISTORY = 'h', "history"
+    HOST = 'hst', "host"
 
+
+class GameState(models.TextChoices):
+    SETUP = 'S', "Setup"
+    ACTIVE = 'A', "Active"
+    PAUSED = 'P', "Paused"
+    FINISHED = 'F', "Finished"
+
+
+class UniverseSize(models.IntegerChoices):
+    TINY = 0, "Tiny"
+    SMALL = 1, "Small"
+    MEDIUM = 2, "Medium"
+    LARGE = 3, "Large"
+    HUGE = 4, "Huge"
+
+
+class UniverseDensity(models.IntegerChoices):
+    SPARSE = 0, "Sparse"
+    NORMAL = 1, "Normal"
+    DENSE = 2, "Dense"
+    PACKED = 3, "Packed"
+
+
+class StartingDistance(models.IntegerChoices):
+    CLOSE = 0, "Close"
+    MODERATE = 1, "Moderate"
+    FARTHER = 2, "Farther"
+    DISTANT = 3, "Distant"
+
+
+class AIRace(models.IntegerChoices):
+    RANDOM = 0, "Random"
+    ROBOTOIDS = 1, "Robotoids"
+    TURINDRONES = 2, "Turindrones"
+    AUTOMITRONS = 3, "Automitrons"
+    ROTOTILLS = 4, "Rototills"
+    CYBERTRONS = 5, "Cybertrons"
+    MACINTI = 6, "Macinti"
+
+    __empty__ = "-------"
+
+
+class AISkillLevel(models.IntegerChoices):
+    RANDOM = 0, "Random"
+    EASY = 1, "Easy"
+    STANDARD = 2, "Standard"
+    TOUGH = 3, "Tough"
+    EXPERT = 4, "Expert"
+
+    __empty__ = "-------"
+
+
+class ScoreSection(models.IntegerChoices):
+    RANK = 0, "Rank"  # The Struct45.year field is the player rank in .m* files.
+    SCORE = 1, "Score"
+    RESOURCES = 2, "Resources"
+    TECHLEVELS = 3, "Tech Levels"
+    CAPSHIPS = 4, "Capital Ships"
+    ESCORTSHIPS = 5, "Escort Ships"
+    UNARMEDSHIPS = 6, "Unarmed Ships"
+    STARBASES = 7, "Starbases"
+    PLANETS = 8, "Planets"
+
+
+class StarsFile(models.Model):
     upload_user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True,
                                     related_name='starsweb_files')
     timestamp = models.DateTimeField(auto_now_add=True)
-    type = models.CharField(max_length=3, choices=STARS_TYPES)
+    type = models.CharField(max_length=3, choices=StarsFileType.choices)
     file = models.FileField(upload_to=starsfile_path)
 
     @classmethod
@@ -76,12 +141,6 @@ class StarsFile(models.Model):
 
 
 class Game(models.Model):
-    STATE_CHOICES = (
-        ('S', 'Setup'),
-        ('A', 'Active'),
-        ('P', 'Paused'),
-        ('F', 'Finished')
-    )
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
 
@@ -90,7 +149,7 @@ class Game(models.Model):
 
     host = models.ForeignKey("auth.User", on_delete=models.SET(1), related_name='starsweb_games')
     created = models.DateTimeField(auto_now_add=True)
-    state = models.CharField(max_length=1, choices=STATE_CHOICES, default='S')
+    state = models.CharField(max_length=1, choices=GameState.choices, default=GameState.SETUP)
     published = models.BooleanField(default=True)
 
     mapfile = models.ForeignKey(StarsFile, on_delete=models.SET_NULL, null=True)
@@ -126,9 +185,9 @@ class Game(models.Model):
     def generate(self):
         path, winpath = self._tempdir_create()
 
-        if self.state == 'S':
+        if self.state == GameState.SETUP:
             self._activate(path, winpath)
-        elif self.state in ('A', 'P'):
+        elif self.state in (GameState.ACTIVE, GameState.PAUSED):
             self._generate(path, winpath)
         else:
             logger.error(
@@ -139,7 +198,7 @@ class Game(models.Model):
 
     def _activate(self, path, winpath):
         # Move the game into active state.
-        self.state = 'A'
+        self.state = GameState.ACTIVE
         self.save()
 
         # Process the race files for each race.
@@ -287,7 +346,15 @@ class Game(models.Model):
         # Process the m files.
         races = {r.player_number: r for r in self.races.filter(player_number__isnull=False)}
         scores = defaultdict(set)
-        scores_unmatched = {(race, section) for race in races for sfield, section in Score.FIELDS}
+        scores_unmatched = {(race, section) for race in races for section in ScoreSection.values}
+
+        STRUCT_FIELDS = {
+            'rank': 'year',
+            'techlevels': 'tech_levels',
+            'capships': 'capital_ships',
+            'escortships': 'escort_ships',
+            'unarmedships': 'unarmed_ships',
+        }
 
         for m_name in glob.glob(f'{path}/*.m[0-9]*'):
             with open(m_name, 'rb') as f:
@@ -304,7 +371,9 @@ class Game(models.Model):
                 if S.type != 45:  # Type 45 is the Score data structure.
                     continue
 
-                for sfield, section in Score.FIELDS:
+                for sname in ScoreSection.names:
+                    sfield, section = sname.lower(), ScoreSection[sname]
+                    sfield = STRUCT_FIELDS.get(sfield, sfield)
                     value = getattr(S, sfield, 0)
 
                     # Save all scores from this file, to potentially
@@ -341,44 +410,11 @@ class Game(models.Model):
 
 
 class GameOptions(models.Model):
-    SIZE_CHOICES = ((0, 'Tiny'),
-                    (1, 'Small'),
-                    (2, 'Medium'),
-                    (3, 'Large'),
-                    (4, 'Huge'))
-
-    DENSITY_CHOICES = ((0, 'Sparse'),
-                       (1, 'Normal'),
-                       (2, 'Dense'),
-                       (3, 'Packed'))
-
-    DISTANCE_CHOICES = ((0, 'Close'),
-                        (1, 'Moderate'),
-                        (2, 'Farther'),
-                        (3, 'Distant'))
-
-    AI_RACES = ((0, 'Random'),
-                (1, 'Robotoids'),
-                (2, 'Turindrones'),
-                (3, 'Automitrons'),
-                (4, 'Rototills'),
-                (5, 'Cybertrons'),
-                (6, 'Macinti'))
-
-    AI_SKILL_LEVELS = ((0, 'Random'),
-                       (1, 'Easy'),
-                       (2, 'Standard'),
-                       (3, 'Tough'),
-                       (4, 'Expert'))
-
     game = models.OneToOneField(Game, on_delete=models.CASCADE, related_name='options')
 
-    universe_size = models.PositiveSmallIntegerField(
-        choices=SIZE_CHOICES, default=1)
-    universe_density = models.PositiveSmallIntegerField(
-        choices=DENSITY_CHOICES, default=1)
-    starting_distance = models.PositiveSmallIntegerField(
-        choices=DISTANCE_CHOICES, default=1)
+    universe_size = models.PositiveSmallIntegerField(choices=UniverseSize.choices, default=UniverseSize.SMALL)
+    universe_density = models.PositiveSmallIntegerField(choices=UniverseDensity.choices, default=UniverseDensity.NORMAL)
+    starting_distance = models.PositiveSmallIntegerField(choices=StartingDistance.choices, default=StartingDistance.MODERATE)
 
     maximum_minerals = models.BooleanField(
         default=False, blank=True,
@@ -633,51 +669,9 @@ class RaceTurn(models.Model):
 
 
 class Score(models.Model):
-    RANK = 0
-    SCORE = 1
-    RESOURCES = 2
-    TECHLEVELS = 3
-    CAPSHIPS = 4
-    ESCORTSHIPS = 5
-    UNARMEDSHIPS = 6
-    STARBASES = 7
-    PLANETS = 8
-
-    SECTIONS = ((RANK, 'Rank'),
-                (SCORE, 'Score'),
-                (RESOURCES, 'Resources'),
-                (TECHLEVELS, 'Tech Levels'),
-                (CAPSHIPS, 'Capital Ships'),
-                (ESCORTSHIPS, 'Escort Ships'),
-                (UNARMEDSHIPS, 'Unarmed Ships'),
-                (STARBASES, 'Starbases'),
-                (PLANETS, 'Planets'),)
-
-    FIELDS = (
-        ('year', RANK),
-        ('score', SCORE),
-        ('resources', RESOURCES),
-        ('tech_levels', TECHLEVELS),
-        ('capital_ships', CAPSHIPS),
-        ('escort_ships', ESCORTSHIPS),
-        ('unarmed_ships', UNARMEDSHIPS),
-        ('starbases', STARBASES),
-        ('planets', PLANETS),
-    )
-
-    TOKENS = ('rank', 'score', 'resources', 'techlevels', 'capships',
-              'escortships', 'unarmedships', 'starbases', 'planets')
-
-    TOKEN_VALUES = {value: token for token, (value, name) in zip(TOKENS, SECTIONS)}
-
-    NAMES = [
-        (token, name)
-        for token, (value, name) in zip(TOKENS, SECTIONS)
-    ]
-
     turn = models.ForeignKey(Turn, on_delete=models.CASCADE, related_name='scores')
     race = models.ForeignKey(Race, on_delete=models.CASCADE, related_name='scores')
-    section = models.IntegerField(choices=SECTIONS, default=RANK)
+    section = models.IntegerField(choices=ScoreSection.choices, default=ScoreSection.RANK)
     value = models.IntegerField()
 
     class Meta:

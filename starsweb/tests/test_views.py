@@ -85,14 +85,14 @@ class GameDetailViewTestCase(TestCase):
         self.race2.save()
         self.race3.player_number = 2
         self.race3.save()
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
         turn = self.game.turns.create(year=2401)
-        turn.scores.create(race=self.race1, section=models.Score.SCORE,
+        turn.scores.create(race=self.race1, section=models.ScoreSection.SCORE,
                            value=247)
-        turn.scores.create(race=self.race2, section=models.Score.SCORE,
+        turn.scores.create(race=self.race2, section=models.ScoreSection.SCORE,
                            value=430)
-        turn.scores.create(race=self.race3, section=models.Score.SCORE,
+        turn.scores.create(race=self.race3, section=models.ScoreSection.SCORE,
                            value=576)
 
         response = self.client.get(self.detail_url)
@@ -116,14 +116,14 @@ class GameDetailViewTestCase(TestCase):
         self.race2.save()
         self.race3.player_number = 2
         self.race3.save()
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
         turn = self.game.turns.create(year=2401)
-        turn.scores.create(race=self.race1, section=models.Score.SCORE,
+        turn.scores.create(race=self.race1, section=models.ScoreSection.SCORE,
                            value=5097)
-        turn.scores.create(race=self.race2, section=models.Score.SCORE,
+        turn.scores.create(race=self.race2, section=models.ScoreSection.SCORE,
                            value=6702)
-        turn.scores.create(race=self.race3, section=models.Score.SCORE,
+        turn.scores.create(race=self.race3, section=models.ScoreSection.SCORE,
                            value=0)
 
         response = self.client.get(self.detail_url)
@@ -147,22 +147,22 @@ class GameDetailViewTestCase(TestCase):
         self.race2.save()
         self.race3.player_number = 2
         self.race3.save()
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
         turn = self.game.turns.create(year=2401)
-        turn.scores.create(race=self.race1, section=models.Score.SCORE,
+        turn.scores.create(race=self.race1, section=models.ScoreSection.SCORE,
                            value=247)
-        turn.scores.create(race=self.race2, section=models.Score.SCORE,
+        turn.scores.create(race=self.race2, section=models.ScoreSection.SCORE,
                            value=430)
-        turn.scores.create(race=self.race3, section=models.Score.SCORE,
+        turn.scores.create(race=self.race3, section=models.ScoreSection.SCORE,
                            value=576)
 
         turn = self.game.turns.create(year=2402)
-        turn.scores.create(race=self.race1, section=models.Score.SCORE,
+        turn.scores.create(race=self.race1, section=models.ScoreSection.SCORE,
                            value=5097)
-        turn.scores.create(race=self.race2, section=models.Score.SCORE,
+        turn.scores.create(race=self.race2, section=models.ScoreSection.SCORE,
                            value=6702)
-        turn.scores.create(race=self.race3, section=models.Score.SCORE,
+        turn.scores.create(race=self.race3, section=models.ScoreSection.SCORE,
                            value=3592)
 
         response = self.client.get(self.detail_url)
@@ -213,7 +213,7 @@ class GameCreateViewTestCase(TestCase):
         self.assertEqual(models.Game.objects.count(), 1)
         g = models.Game.objects.get()
         self.assertEqual(g.name, "Foobar")
-        self.assertEqual(g.state, 'S')
+        self.assertEqual(g.state, models.GameState.SETUP)
         self.assertEqual(g.host.username, 'admin')
         self.assertContains(response, "This <em>game</em> is foobared.")
 
@@ -238,7 +238,7 @@ class GameCreateViewTestCase(TestCase):
         self.assertEqual(models.Game.objects.count(), 1)
         g = models.Game.objects.get()
         self.assertEqual(g.name, "Foobar")
-        self.assertEqual(g.state, 'S')
+        self.assertEqual(g.state, models.GameState.SETUP)
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html, "")
 
@@ -297,7 +297,7 @@ class GameMapDownloadTestCase(TestCase):
             name="Total War in Ulfland",
             slug="total-war-in-ulfland",
             host=self.user,
-            state='A',
+            state=models.GameState.ACTIVE,
             description="This *game* is foobared.",
         )
         self.game.save()
@@ -420,7 +420,7 @@ class GameJoinViewTestCase(TestCase):
     def test_game_active(self):
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
 
         response = self.client.get(self.join_url)
@@ -439,7 +439,7 @@ class GameJoinViewTestCase(TestCase):
     def test_game_paused(self):
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
-        self.game.state = 'P'
+        self.game.state = models.GameState.PAUSED
         self.game.save()
 
         response = self.client.get(self.join_url)
@@ -458,7 +458,7 @@ class GameJoinViewTestCase(TestCase):
     def test_game_finished(self):
         self.assertFalse(models.Race.objects.exists())
         self.assertFalse(models.Ambassador.objects.exists())
-        self.game.state = 'F'
+        self.game.state = models.GameState.FINISHED
         self.game.save()
 
         response = self.client.get(self.join_url)
@@ -605,7 +605,7 @@ class RaceUpdateViewTestCase(TestCase):
             pass
 
     def test_game_active(self):
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
 
         response = self.client.get(self.update_url)
@@ -621,7 +621,7 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.get().slug, "gestalti")
 
     def test_game_paused(self):
-        self.game.state = 'P'
+        self.game.state = models.GameState.PAUSED
         self.game.save()
 
         response = self.client.get(self.update_url)
@@ -637,7 +637,7 @@ class RaceUpdateViewTestCase(TestCase):
         self.assertEqual(models.Race.objects.get().slug, "gestalti")
 
     def test_game_finished(self):
-        self.game.state = 'F'
+        self.game.state = models.GameState.FINISHED
         self.game.save()
 
         response = self.client.get(self.update_url)
@@ -810,7 +810,7 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
     def test_game_active(self):
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -831,7 +831,7 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
     def test_game_paused(self):
-        self.game.state = 'P'
+        self.game.state = models.GameState.PAUSED
         self.game.save()
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -852,7 +852,7 @@ class AmbassadorUpdateViewTestCase(TestCase):
         self.assertEqual(models.Ambassador.objects.count(), 1)
 
     def test_game_finished(self):
-        self.game.state = 'F'
+        self.game.state = models.GameState.FINISHED
         self.game.save()
         self.assertEqual(models.Race.objects.count(), 1)
         self.assertEqual(models.Ambassador.objects.count(), 1)
@@ -1074,7 +1074,7 @@ class RaceDashboardViewTestCase(TestCase):
             starsfile.file.delete()
 
     def test_setup_state(self):
-        self.assertEqual(self.game.state, 'S')
+        self.assertEqual(self.game.state, models.GameState.SETUP)
 
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
@@ -1097,12 +1097,12 @@ class RaceDashboardViewTestCase(TestCase):
         self.assertContains(response, "<b>Player Number:</b> N/A")
 
     def test_game_active(self):
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
         self.race.player_number = 0
         self.race.save()
 
-        self.assertEqual(self.game.state, 'A')
+        self.assertEqual(self.game.state, models.GameState.ACTIVE)
 
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
@@ -1125,10 +1125,10 @@ class RaceDashboardViewTestCase(TestCase):
         self.assertContains(response, "<b>Player Number:</b> 1")
 
     def test_game_paused(self):
-        self.game.state = 'P'
+        self.game.state = models.GameState.PAUSED
         self.game.save()
 
-        self.assertEqual(self.game.state, 'P')
+        self.assertEqual(self.game.state, models.GameState.PAUSED)
 
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
@@ -1149,10 +1149,10 @@ class RaceDashboardViewTestCase(TestCase):
                                                  kwargs=self.url_kwargs))
 
     def test_game_finished(self):
-        self.game.state = 'F'
+        self.game.state = models.GameState.FINISHED
         self.game.save()
 
-        self.assertEqual(self.game.state, 'F')
+        self.assertEqual(self.game.state, models.GameState.FINISHED)
 
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
@@ -1852,7 +1852,7 @@ class RaceFileBindTestCase(TestCase):
     def test_game_active(self):
         self.assertIsNone(self.race.racefile)
 
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
 
         response = self.client.get(self.bind_url)
@@ -1867,7 +1867,7 @@ class RaceFileBindTestCase(TestCase):
     def test_game_paused(self):
         self.assertIsNone(self.race.racefile)
 
-        self.game.state = 'P'
+        self.game.state = models.GameState.PAUSED
         self.game.save()
 
         response = self.client.get(self.bind_url)
@@ -1882,7 +1882,7 @@ class RaceFileBindTestCase(TestCase):
     def test_game_finished(self):
         self.assertIsNone(self.race.racefile)
 
-        self.game.state = 'F'
+        self.game.state = models.GameState.FINISHED
         self.game.save()
 
         response = self.client.get(self.bind_url)
@@ -2311,7 +2311,7 @@ class RaceFileUploadTestCase(TestCase):
         self.assertIsNone(models.Race.objects.get().racefile)
 
     def test_game_in_active_state(self):
-        self.game.state = 'A'
+        self.game.state = models.GameState.ACTIVE
         self.game.save()
 
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2327,7 +2327,7 @@ class RaceFileUploadTestCase(TestCase):
         self.assertIsNone(models.Race.objects.get().racefile)
 
     def test_game_in_paused_state(self):
-        self.game.state = 'P'
+        self.game.state = models.GameState.PAUSED
         self.game.save()
 
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2343,7 +2343,7 @@ class RaceFileUploadTestCase(TestCase):
         self.assertIsNone(models.Race.objects.get().racefile)
 
     def test_game_in_finished_state(self):
-        self.game.state = 'F'
+        self.game.state = models.GameState.FINISHED
         self.game.save()
 
         self.assertEqual(models.StarsFile.objects.count(), 0)
@@ -2437,7 +2437,7 @@ class StateFileDownloadTestCase(TestCase):
         self.game = models.Game(
             name="Total War in Ulfland",
             slug="total-war-in-ulfland",
-            host=self.user, state='A',
+            host=self.user, state=models.GameState.ACTIVE,
             description="This *game* is foobared.",
         )
         self.game.save()
@@ -2544,7 +2544,7 @@ class OrderFileDownloadTestCase(TestCase):
         self.game = models.Game(
             name="Total War in Ulfland",
             slug="total-war-in-ulfland",
-            host=self.user, state='A',
+            host=self.user, state=models.GameState.ACTIVE,
             description="This *game* is foobared.",
         )
         self.game.save()
@@ -2651,7 +2651,7 @@ class OrderFileUploadTestCase(TestCase):
         self.game = models.Game(
             name="Total War in Ulfland",
             slug="total-war-in-ulfland",
-            host=self.user, state='A',
+            host=self.user, state=models.GameState.ACTIVE,
             description="This *game* is foobared.",
         )
         self.game.save()
@@ -2751,7 +2751,7 @@ class OrderFileUploadTestCase(TestCase):
         self.assertIsNone(models.RaceTurn.objects.get().xfile)
 
     def test_game_in_setup_state(self):
-        self.game.state = 'S'
+        self.game.state = models.GameState.SETUP
         self.game.save()
 
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2767,7 +2767,7 @@ class OrderFileUploadTestCase(TestCase):
         self.assertIsNone(models.RaceTurn.objects.get().xfile)
 
     def test_game_in_finished_state(self):
-        self.game.state = 'F'
+        self.game.state = models.GameState.FINISHED
         self.game.save()
 
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -2848,7 +2848,7 @@ class HistoryFileDownloadTestCase(TestCase):
         self.game = models.Game(
             name="Total War in Ulfland",
             slug="total-war-in-ulfland",
-            host=self.user, state='A',
+            host=self.user, state=models.GameState.ACTIVE,
             description="This *game* is foobared.",
         )
         self.game.save()
@@ -2956,7 +2956,7 @@ class HistoryFileUploadTestCase(TestCase):
         self.game = models.Game(
             name="Total War in Ulfland",
             slug="total-war-in-ulfland",
-            host=self.user, state='A',
+            host=self.user, state=models.GameState.ACTIVE,
             description="This *game* is foobared.",
         )
         self.game.save()
@@ -3056,7 +3056,7 @@ class HistoryFileUploadTestCase(TestCase):
         self.assertIsNone(models.RaceTurn.objects.get().hfile)
 
     def test_game_in_setup_state(self):
-        self.game.state = 'S'
+        self.game.state = models.GameState.SETUP
         self.game.save()
 
         self.assertEqual(models.StarsFile.objects.count(), 1)
@@ -3072,7 +3072,7 @@ class HistoryFileUploadTestCase(TestCase):
         self.assertIsNone(models.RaceTurn.objects.get().hfile)
 
     def test_game_in_finished_state(self):
-        self.game.state = 'F'
+        self.game.state = models.GameState.FINISHED
         self.game.save()
 
         self.assertEqual(models.StarsFile.objects.count(), 1)

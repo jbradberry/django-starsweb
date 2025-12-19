@@ -45,9 +45,7 @@ class GameDetailView(DetailView):
         scores = {}
         turn = self.object.current_turn
         if turn:
-            scores.update(
-                turn.scores.filter(section=models.Score.SCORE
-                                   ).values_list('race__plural_name', 'value'))
+            scores.update(turn.scores.filter(section=models.ScoreSection.SCORE).values_list('race__plural_name', 'value'))
         context['races'] = sorted(((race, scores.get(str(race))) for race in self.object.races.all()),
                                   key=lambda r_s: (r_s[1] if r_s[1] is None else -r_s[1], r_s[0].player_number, r_s[0].pk))
         context.update(kwargs)
@@ -189,7 +187,7 @@ class GameJoinView(ParentGameMixin, CreateView):
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
-        if self.game.state != 'S':
+        if self.game.state != models.GameState.SETUP:
             raise PermissionDenied
 
         self.object = None
@@ -204,7 +202,7 @@ class GameJoinView(ParentGameMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
-        if self.game.state != 'S':
+        if self.game.state != models.GameState.SETUP:
             raise PermissionDenied
 
         self.object = None
@@ -253,13 +251,13 @@ class RaceUpdateView(ParentGameMixin, UpdateView):
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
-        if self.game.state != 'S':
+        if self.game.state != models.GameState.SETUP:
             raise PermissionDenied
         return super(RaceUpdateView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
-        if self.game.state != 'S':
+        if self.game.state != models.GameState.SETUP:
             raise PermissionDenied
         return super(RaceUpdateView, self).post(request, *args, **kwargs)
 
@@ -319,14 +317,14 @@ class AmbassadorUpdateView(ParentRaceMixin, UpdateView):
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
-        if self.game.state == 'F':
+        if self.game.state == models.GameState.FINISHED:
             raise PermissionDenied
         self.race = self.get_race()
         return super(AmbassadorUpdateView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
-        if self.game.state == 'F':
+        if self.game.state == models.GameState.FINISHED:
             raise PermissionDenied
         self.race = self.get_race()
         return super(AmbassadorUpdateView, self).post(request, *args, **kwargs)
@@ -365,7 +363,7 @@ class RacePageCreate(ParentRaceMixin, CreateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state == 'F':
+        if self.game.state == models.GameState.FINISHED:
             raise PermissionDenied
 
         return super(RacePageCreate, self).get(request, *args, **kwargs)
@@ -377,7 +375,7 @@ class RacePageCreate(ParentRaceMixin, CreateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state == 'F':
+        if self.game.state == models.GameState.FINISHED:
             raise PermissionDenied
 
         return super(RacePageCreate, self).post(request, *args, **kwargs)
@@ -409,7 +407,7 @@ class RacePageUpdate(ParentRaceMixin, UpdateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state == 'F':
+        if self.game.state == models.GameState.FINISHED:
             raise PermissionDenied
 
         return super(RacePageUpdate, self).get(request, *args, **kwargs)
@@ -421,7 +419,7 @@ class RacePageUpdate(ParentRaceMixin, UpdateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state == 'F':
+        if self.game.state == models.GameState.FINISHED:
             raise PermissionDenied
 
         return super(RacePageUpdate, self).post(request, *args, **kwargs)
@@ -454,7 +452,7 @@ class RacePageDelete(ParentRaceMixin, DeleteView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state == 'F':
+        if self.game.state == models.GameState.FINISHED:
             raise PermissionDenied
 
         return super(RacePageDelete, self).get(request, *args, **kwargs)
@@ -466,7 +464,7 @@ class RacePageDelete(ParentRaceMixin, DeleteView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state == 'F':
+        if self.game.state == models.GameState.FINISHED:
             raise PermissionDenied
 
         self.race.homepage = None
@@ -493,12 +491,12 @@ class RaceDashboardView(ParentRaceMixin, TemplateView):
         context = {'game': self.game,
                    'race': self.race,
                    'ambassador': self.ambassador}
-        if self.game.state == 'S':
+        if self.game.state == models.GameState.SETUP:
             context.update(race_form=forms.RaceForm(instance=self.race),
                            raceupload_form=forms.RaceFileForm(),
                            racechoose_form=forms.ChooseUserRaceForm(
                                user=self.request.user))
-        if self.game.state != 'F':
+        if self.game.state != models.GameState.FINISHED:
             context.update(
                 ambassador_form=forms.AmbassadorForm(instance=self.ambassador))
         context.update(kwargs)
@@ -535,17 +533,18 @@ class ScoreGraphView(DetailView):
 
         score_data = defaultdict(lambda: defaultdict(dict))
         for item in scores:
-            section_set = score_data[models.Score.TOKEN_VALUES[item['section']]]
+            section_set = score_data[models.ScoreSection[item['section'].upper()]]
             race_scores = section_set[item['race__plural_name']] = [None for x in range(year_min, year_max+1)]
             race_scores[item['turn__year'] - year_min] = item['value']
 
+        sections = list(zip(map(str.lower, models.ScoreSection.names), models.ScoreSection.labels))
         context = {
             'races': json.dumps(list(races)),
             'visible_races': json.dumps(
                 self.request.GET.getlist('races[]', [])),
             'section': self.request.GET.get('section', 'score'),
-            'sections': models.Score.NAMES,
-            'json_sections': json.dumps(dict(models.Score.NAMES)),
+            'sections': sections,
+            'json_sections': json.dumps(dict(sections)),
             'from_year': self.request.GET.get('from_year', ''),
             'to_year': self.request.GET.get('to_year', ''),
             'scores': json.dumps(score_data),
@@ -666,13 +665,13 @@ class RaceFileBind(ParentGameMixin, UpdateView):
 
     def get(self, request, *args, **kwargs):
         self.game = self.get_game()
-        if self.game.state != 'S':
+        if self.game.state != models.GameState.SETUP:
             raise PermissionDenied
         return super(RaceFileBind, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.game = self.get_game()
-        if self.game.state != 'S':
+        if self.game.state != models.GameState.SETUP:
             raise PermissionDenied
         return super(RaceFileBind, self).post(request, *args, **kwargs)
 
@@ -899,7 +898,7 @@ class RaceFileUpload(ParentRaceMixin, CreateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state != 'S':
+        if self.game.state != models.GameState.SETUP:
             raise PermissionDenied
         return super(RaceFileUpload, self).get(request, *args, **kwargs)
 
@@ -909,7 +908,7 @@ class RaceFileUpload(ParentRaceMixin, CreateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state != 'S':
+        if self.game.state != models.GameState.SETUP:
             raise PermissionDenied
         return super(RaceFileUpload, self).post(request, *args, **kwargs)
 
@@ -998,7 +997,7 @@ class OrderFileUpload(ParentRaceMixin, CreateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state not in ('A', 'P'):
+        if self.game.state not in (models.GameState.ACTIVE, models.GameState.PAUSED):
             raise PermissionDenied
 
         self.current_turn = self.game.current_turn
@@ -1018,7 +1017,7 @@ class OrderFileUpload(ParentRaceMixin, CreateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state not in ('A', 'P'):
+        if self.game.state not in (models.GameState.ACTIVE, models.GameState.PAUSED):
             raise PermissionDenied
 
         self.current_turn = self.game.current_turn
@@ -1090,7 +1089,7 @@ class HistoryFileUpload(ParentRaceMixin, CreateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state not in ('A', 'P'):
+        if self.game.state not in (models.GameState.ACTIVE, models.GameState.PAUSED):
             raise PermissionDenied
 
         self.current_turn = self.game.current_turn
@@ -1110,7 +1109,7 @@ class HistoryFileUpload(ParentRaceMixin, CreateView):
         if not self.race.ambassadors.filter(user=self.request.user,
                                             active=True).exists():
             raise PermissionDenied
-        if self.game.state not in ('A', 'P'):
+        if self.game.state not in (models.GameState.ACTIVE, models.GameState.PAUSED):
             raise PermissionDenied
 
         self.current_turn = self.game.current_turn

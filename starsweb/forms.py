@@ -1,5 +1,4 @@
 from django import forms
-from django.db.models import BLANK_CHOICE_DASH
 from django.template.defaultfilters import slugify
 
 from starslib import base
@@ -16,11 +15,9 @@ class CreateGameForm(forms.ModelForm):
 class AiPlayersWidget(forms.MultiWidget):
     def __init__(self, attrs=None):
         _widgets = [
-            forms.Select(attrs=attrs,
-                         choices=BLANK_CHOICE_DASH + list(w))
+            forms.Select(attrs=attrs, choices=w)
             for x in range(16)
-            for w in (models.GameOptions.AI_RACES,
-                      models.GameOptions.AI_SKILL_LEVELS)
+            for w in (models.AIRace.choices, models.AISkillLevel.choices)
         ]
         return super(AiPlayersWidget, self).__init__(_widgets, attrs)
 
@@ -38,11 +35,9 @@ class AiPlayers(forms.MultiValueField):
 
     def __init__(self, *args, **kwargs):
         fields = [
-            forms.ChoiceField(choices=BLANK_CHOICE_DASH + list(w),
-                              required=False)
+            forms.ChoiceField(choices=w, required=False)
             for x in range(16)
-            for w in (models.GameOptions.AI_RACES,
-                      models.GameOptions.AI_SKILL_LEVELS)
+            for w in (models.AIRace.choices, models.AISkillLevel.choices)
         ]
         super(AiPlayers, self).__init__(fields, *args, **kwargs)
 
@@ -91,8 +86,7 @@ class RaceForm(forms.ModelForm):
             plural_name.encode('cp1252')
         except UnicodeEncodeError:
             raise forms.ValidationError(
-                "Race plural name is restricted to the"
-                " cp1252/latin1 character set.")
+                "Race plural name is restricted to the cp1252/latin1 character set.")
 
         return plural_name
 

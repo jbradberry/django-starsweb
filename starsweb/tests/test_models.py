@@ -91,7 +91,7 @@ class GameTestCase(TestCase):
         self.assertEqual(models.Game.objects.count(), 1)
         g = models.Game.objects.get()
         self.assertEqual(g.name, "Foobar")
-        self.assertEqual(g.state, 'S')
+        self.assertEqual(g.state, models.GameState.SETUP)
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html,
                          "<p>This <em>game</em> is foobared.</p>")
@@ -111,7 +111,7 @@ class GameTestCase(TestCase):
         self.assertEqual(models.Game.objects.count(), 1)
         g = models.Game.objects.get()
         self.assertEqual(g.name, "Foobar")
-        self.assertEqual(g.state, 'S')
+        self.assertEqual(g.state, models.GameState.SETUP)
         self.assertEqual(g.host.username, 'admin')
         self.assertEqual(g.description_html, "")
 
@@ -132,7 +132,7 @@ class GameTestCase(TestCase):
             name="Foobar",
             slug="foobar",
             host=self.user,
-            state='S',
+            state=models.GameState.SETUP,
             description="This *game* is foobared.",
         )
         g.save()
@@ -155,7 +155,7 @@ class GameTestCase(TestCase):
 
         g = models.Game.objects.get(pk=g.pk)
 
-        self.assertEqual(g.state, 'A')
+        self.assertEqual(g.state, models.GameState.ACTIVE)
         self.assertNotEqual(g.options.file_contents, '')
         self.assertEqual(g.races.filter(player_number__isnull=False).count(), 2)
         self.assertIsNotNone(g.mapfile)
@@ -181,7 +181,7 @@ class GameTestCase(TestCase):
 
         g = models.Game.objects.get(pk=g.pk)
 
-        self.assertEqual(g.state, 'A')
+        self.assertEqual(g.state, models.GameState.ACTIVE)
         self.assertNotEqual(g.options.file_contents, '')
         self.assertEqual(g.races.filter(player_number__isnull=False).count(), 2)
         self.assertIsNotNone(g.mapfile)
