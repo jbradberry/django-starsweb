@@ -125,6 +125,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-SENDFILE_BACKEND = 'django_sendfile.backends.development'
+SENDFILE_BACKEND = 'django_sendfile.backends.simple'
 SENDFILE_ROOT = MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
