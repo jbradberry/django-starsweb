@@ -86,6 +86,10 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = []
 
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]
+
 AUTHENTICATION_BACKENDS = [
     'turngeneration.backends.TurnGenerationBackend',
     'django.contrib.auth.backends.ModelBackend',
