@@ -8,12 +8,21 @@ authors = [
 description = "A hosting app for the classic 4X space strategy game Stars."
 readme = "README.rst"
 license = "MIT"
+dependencies = [
+  "django>=5.0",
+  "Markdown",
+  "nh3",
+  "django-sendfile2",
+  "starslib @ git+https://github.com/jbradberry/starslib.git@2025-upgrade",
+]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Games/Entertainment :: Turn Based Strategy",
 ]
 

@@ -2,9 +2,6 @@
 django-starsweb
 ===============
 
-.. image:: https://travis-ci.com/jbradberry/django-starsweb.svg?branch=master
-    :target: https://travis-ci.com/jbradberry/django-starsweb
-
 A hosting app for the classic 4X space strategy game Stars_.
 
 .. _Stars: http://en.wikipedia.org/wiki/Stars!
@@ -12,20 +9,26 @@ A hosting app for the classic 4X space strategy game Stars_.
 
 Requirements
 ------------
-- Python 2.7, 3.5+
-- Django >= 1.10, < 2.3
+- Python 3.10+
+- Django 5.0, 5.1, 5.2
+- Markdown
+- nh3
 - django-sendfile2_
-- django-template-utils_
-- lxml
-- starslib
+- starslib_
 
-.. _django-sendfile2: https://github.com/moggers87/django-sendfile2
-.. _django-template-utils: https://bitbucket.org/ubernostrum/django-template-utils
+.. _django-sendfile2: https://codeberg.org/moggers87/django-sendfile2
+.. _starslib: https://github.com/jbradberry/starslib
 
 
 Recommended
 -----------
-- django-micro-press
+- Wine
+- Stars 2.60i / 2.70i
+- django-turn-generation_
+- django-micro-press_
+
+.. _django-turn-generation: https://github.com/jbradberry/django-turn-generation
+.. _djang-micro-press: https://github.com/jbradberry/django-micro-press
 
 
 Installation
@@ -55,14 +58,19 @@ Add Starsweb to the ``INSTALLED_APPS`` in your settings file.
         'starsweb',
     )
 
+Configure Sendfile::
+
+    SENDFILE_BACKEND = 'django_sendfile.backends.simple'
+    SENDFILE_ROOT = MEDIA_ROOT = BASE_DIR / 'media'
+
 Also, be sure to include ``starsweb.urls`` in your root urlconf.
 
 Example::
 
-    from django.conf.urls import include, url
+    from django.urls import include, path
 
     urlpatterns = [
-        url(r'^', include('starsweb.urls')),
-        url(r'^admin/', include('admin.site.urls')),
-        url(r'^accounts/', include('django.contrib.auth.urls'),
+        path('', include('starsweb.urls')),
+        path('admin/', include('admin.site.urls')),
+        path('accounts/', include('django.contrib.auth.urls'),
     ]
