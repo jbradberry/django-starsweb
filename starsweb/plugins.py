@@ -1,6 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
-
-from . import models
 
 
 class TurnGeneration:
@@ -28,11 +25,6 @@ class TurnGeneration:
     }
 
     def related_agents(self, realm, agent_type=None):
-        ct = ContentType.objects.get_for_model(models.Race)
-        if agent_type is None:
-            agent_type = ct
-        if agent_type != ct:
-            return
         return realm.races.filter(player_number__isnull=False,
                                   ambassadors__active=True,
                                   is_ai=False)
